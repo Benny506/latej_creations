@@ -1,0 +1,105 @@
+/* La Tejcreations | Bootstrap Framework Overrides */
+@import './color-theme.css';
+
+/* 1. Global Reset for Bootstrap Defaults */
+body {
+  background-color: var(--lt-earth-light);
+  color: var(--lt-text-main);
+}
+
+/* 2. Button Overrides (High-Fidelity Native Styles) */
+.btn {
+  border-radius: 50px;
+  padding: 0.75rem 2.5rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.85rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid transparent;
+}
+
+.btn-primary {
+  background-color: var(--lt-primary) !important;
+  border-color: var(--lt-primary) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 15px rgba(192, 77, 41, 0.3);
+}
+
+.btn-primary:hover {
+  background-color: var(--lt-earth-dark) !important;
+  border-color: var(--lt-earth-dark) !important;
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background-color: var(--lt-secondary) !important;
+  border-color: var(--lt-secondary) !important;
+  color: #fff !important;
+}
+
+.btn-outline-primary {
+  border-color: var(--lt-primary) !important;
+  color: var(--lt-primary) !important;
+  background: transparent !important;
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--lt-primary) !important;
+  color: #fff !important;
+}
+
+/* 3. Badge & Indicator Overrides */
+.badge {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+}
+
+.bg-primary { background-color: var(--lt-primary) !important; color: #fff !important; }
+.bg-secondary { background-color: var(--lt-secondary) !important; color: var(--lt-text-dark) !important; }
+.bg-success { background-color: var(--lt-success) !important; color: #fff !important; }
+.bg-warning { background-color: var(--lt-warning) !important; color: #fff !important; }
+.bg-danger { background-color: var(--lt-danger) !important; color: #fff !important; }
+.bg-info { background-color: var(--lt-info) !important; color: #fff !important; }
+
+/* 4. Container & Card Overrides */
+.card {
+  border: 1px solid var(--lt-border-soft);
+  border-radius: 20px;
+  background-color: #fff;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+/* 5. Text Utility Overrides */
+.text-primary { color: var(--lt-primary) !important; }
+.text-secondary { color: var(--lt-secondary) !important; }
+.text-success { color: var(--lt-success) !important; }
+.text-warning { color: var(--lt-warning) !important; }
+
+/* 6. Form Overrides */
+.form-control {
+  border-radius: 12px;
+  padding: 0.8rem 1.2rem;
+  border: 1px solid var(--lt-border-soft);
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.form-control:focus {
+  border-color: var(--lt-primary);
+  box-shadow: 0 0 0 0.25rem rgba(192, 77, 41, 0.1);
+  background-color: #fff;
+}
+
+/* 7. Native Blend Utilities */
+.bg-native-gradient { background: var(--lt-grad-native); color: #fff; }
+.bg-earth-gradient { background: var(--lt-grad-earth); color: #fff; }
+.bg-sunset-gradient { background: var(--lt-grad-sunset); color: #fff; }

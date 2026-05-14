@@ -1,0 +1,79 @@
+/**
+ * La Tejcreations Color Theme
+ * Premium "African Native" Palette
+ * Hardened for Absolute Legibility
+ */
+
+:root {
+  /* Core Foundation */
+  --lt-white: #ffffff;
+  --lt-bg-main: #ffffff;
+  --lt-bg-ivory: #fcf9f5;
+  
+  /* Primary Earth Tones */
+  --lt-earth-dark: #6D3E21;
+  --lt-earth-main: #8B4513;
+  --lt-earth-light: rgba(109, 62, 33, 0.1);
+  
+  /* Ankara Accents */
+  --lt-gold: #D4AF37;
+  --lt-terracotta: #C04D29;
+  --lt-indigo: #233067;
+  --lt-mustard: #CC7722;
+  
+  /* Hardened Text Colors (FORCED CONTRAST) */
+  --lt-text-dark: #2A1A12;      /* Deep Brown-Black (Use on Light BGs) */
+  --lt-text-lead: #3D2B1F;      /* Rich Dark Brown (Use for lead paragraphs on Light BGs) */
+  --lt-text-white: #FFFFFF;     /* Pure White (Use on Dark BGs) */
+  
+  /* Semantic Tokens */
+  --lt-primary: #6D3E21;
+  --bs-primary-rgb: 109, 62, 33;
+  --lt-secondary: #fcf9f5;
+  
+  /* Procurement Manifestation Colors */
+  --lt-success: #1B4332;       /* Deep Forest Green (Absolute Contrast for Success) */
+  --lt-warning: #856404;       /* Muted Mustard Warning */
+  --lt-danger: #721C24;        /* Deep Maroon Danger */
+  --lt-info: #0C5460;          /* Deep Teal Info */
+}
+
+/* 
+  Global Contrast Enforcement 
+  Aggressively overriding library defaults to ensure visibility.
+*/
+
+body {
+  background-color: var(--lt-bg-main);
+  color: var(--lt-text-dark);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Paragraphs & Lead Text visibility Hardening */
+p, .lead, .text-secondary {
+  color: var(--lt-text-lead) !important;
+  opacity: 1 !important; /* Force full opacity for visibility */
+}
+
+/* Headings Visibility Hardening */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--lt-text-dark) !important;
+}
+
+/* Dark Section Exception Rule */
+[style*="background: var(--lt-earth-dark)"] p,
+[style*="background: var(--lt-earth-dark)"] h2,
+[style*="background: var(--lt-earth-dark)"] .lead {
+  color: var(--lt-text-white) !important;
+}
+
+/* High-Contrast Utility Classes */
+.text-main { color: var(--lt-text-dark) !important; }
+.text-light { color: var(--lt-text-white) !important; }
+.text-primary { color: var(--lt-primary) !important; }
+
+/* Premium Elements */
+.bg-primary { background-color: var(--lt-primary); }
+.border-primary { border-color: var(--lt-primary); }
+.bg-native { background: linear-gradient(135deg, #6D3E21 0%, #C04D29 100%); }
+.shadow-premium { box-shadow: 0 20px 40px rgba(109, 62, 33, 0.15); }

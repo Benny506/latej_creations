@@ -1,0 +1,73 @@
+/* La Tejcreations | Typography Manifest */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Plus+Jakarta+Sans:wght@200..800&display=swap');
+
+:root {
+  --lt-font-header: 'Plus Jakarta Sans', sans-serif;
+  --lt-font-body: 'Outfit', sans-serif;
+}
+
+/* Global Reset & Base Styling */
+html, body {
+  font-family: var(--lt-font-body);
+  color: var(--lt-text-main);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header Governance */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--lt-font-header);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+h1 { font-size: 3.5rem; text-transform: uppercase; letter-spacing: 0.1em; }
+h2 { font-size: 2.75rem; }
+h3 { font-size: 2rem; }
+h4 { font-size: 1.5rem; }
+h5 { font-size: 1.25rem; }
+h6 { font-size: 1.1rem; }
+
+/* Body Content Governance */
+p, li, div, span, article, section {
+  font-family: var(--lt-font-body);
+  font-weight: 400;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+.lead {
+  font-size: 1.25rem;
+  font-weight: 300;
+}
+
+small, .tiny {
+  font-size: 0.8rem;
+}
+
+/* Interaction & Emphasis */
+a {
+  font-family: var(--lt-font-body);
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+em, i {
+  font-style: italic;
+  font-family: var(--lt-font-body);
+}
+
+strong, b {
+  font-weight: 700;
+}
+
+.tracking-widest {
+  letter-spacing: 0.2em;
+}
+
+.uppercase {
+  text-transform: uppercase;
+}
