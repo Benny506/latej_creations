@@ -182,8 +182,14 @@ const OrderDetailsPage = () => {
               <tfoot className="bg-light bg-opacity-50 border-top border-light">
                 <tr>
                   <td colSpan={3} className="px-4 py-3 text-end fw-bold tiny text-uppercase opacity-50">Subtotal</td>
-                  <td className="px-4 py-3 text-end fw-bold text-main">₦{(Number(order.total_amount) - Number(order.delivery_fee)).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-end fw-bold text-main">₦{(Number(order.total_amount) - Number(order.delivery_fee) + Number(order.discount_amount || 0)).toLocaleString()}</td>
                 </tr>
+                {Number(order.discount_amount) > 0 && (
+                  <tr>
+                    <td colSpan={3} className="px-4 py-2 text-end fw-bold tiny text-uppercase text-success">Coupon Discount</td>
+                    <td className="px-4 py-2 text-end fw-bold text-success">- ₦{Number(order.discount_amount).toLocaleString()}</td>
+                  </tr>
+                )}
                 <tr>
                   <td colSpan={3} className="px-4 py-3 text-end fw-bold tiny text-uppercase opacity-50">Delivery Registry</td>
                   <td className="px-4 py-3 text-end fw-bold text-main">₦{Number(order.delivery_fee).toLocaleString()}</td>
@@ -277,6 +283,51 @@ const OrderDetailsPage = () => {
               </div>
             </Card.Body>
           </Card>
+
+          {/* Delivery Tracking (From Admin) */}
+          {(order.tracking_id || order.tracking_link || order.admin_notes) && (
+            <Card className="border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+              <Card.Header className="bg-white border-0 py-4 px-4">
+                <div className="d-flex align-items-center gap-3">
+                  <Truck className="text-primary" />
+                  <h5 className="fw-bold text-main mb-0">Delivery Tracking</h5>
+                </div>
+              </Card.Header>
+              <Card.Body className="p-4 pt-0">
+                <div className="d-grid gap-3">
+                  {order.tracking_id && (
+                    <div className="d-flex align-items-start gap-3">
+                      <div className="bg-light p-2 rounded-3 text-primary"><MapPin size={18} /></div>
+                      <div>
+                        <p className="tiny text-uppercase fw-bold opacity-50 mb-1">Tracking ID</p>
+                        <p className="fw-bold text-main mb-0 text-break">{order.tracking_id}</p>
+                      </div>
+                    </div>
+                  )}
+                  {order.tracking_link && (
+                    <div className="d-flex align-items-start gap-3 mt-2">
+                      <div className="bg-light p-2 rounded-3 text-primary"><ExternalLink size={18} /></div>
+                      <div>
+                        <p className="tiny text-uppercase fw-bold opacity-50 mb-1">Tracking Link</p>
+                        <a href={order.tracking_link} target="_blank" rel="noopener noreferrer" className="fw-bold text-primary text-break text-decoration-none hover-opacity-75">
+                          Track My Order
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                  {order.admin_notes && (
+                    <div className="d-flex align-items-start gap-3 mt-2">
+                      <div className="bg-light p-2 rounded-3 text-primary"><MessageSquare size={18} /></div>
+                      <div>
+                        <p className="tiny text-uppercase fw-bold opacity-50 mb-1">Updates</p>
+                        <p className="small text-main mb-0">{order.admin_notes}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Card.Body>
+            </Card>
+          )}
 
           {/* Payment Identity */}
           <Card className="border-0 shadow-sm rounded-4 overflow-hidden bg-main text-white">

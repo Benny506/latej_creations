@@ -43,6 +43,7 @@ const OrdersPage = () => {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'unpaid': return <Badge bg="light" className="text-dark border rounded-pill px-3 py-2 tiny text-uppercase tracking-tighter d-flex align-items-center gap-2"><Clock size={12} /> Pending Payment</Badge>
+      case 'verifying_manual_payment': return <Badge bg="warning-light" className="text-warning rounded-pill px-3 py-2 tiny text-uppercase tracking-tighter d-flex align-items-center gap-2"><Clock size={12} /> Verifying Payment</Badge>
       case 'processing': return <Badge bg="primary-light" className="text-primary rounded-pill px-3 py-2 tiny text-uppercase tracking-tighter d-flex align-items-center gap-2"><CheckCircle2 size={12} /> Processing</Badge>
       case 'shipped': return <Badge bg="info-light" className="text-info rounded-pill px-3 py-2 tiny text-uppercase tracking-tighter d-flex align-items-center gap-2"><Truck size={12} /> In Transit</Badge>
       case 'delivered': return <Badge bg="success-light" className="text-success rounded-pill px-3 py-2 tiny text-uppercase tracking-tighter d-flex align-items-center gap-2"><CheckCircle2 size={12} /> Delivered</Badge>
@@ -53,7 +54,12 @@ const OrdersPage = () => {
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          order.full_name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'All' || order.status === statusFilter.toLowerCase()
+    
+    let matchesStatus = false;
+    if (statusFilter === 'All') matchesStatus = true;
+    else if (statusFilter === 'Verifying Payment') matchesStatus = order.status === 'verifying_manual_payment';
+    else matchesStatus = order.status === statusFilter.toLowerCase();
+    
     return matchesSearch && matchesStatus
   })
 
@@ -88,6 +94,7 @@ const OrdersPage = () => {
                 >
                   <option>All</option>
                   <option>Unpaid</option>
+                  <option>Verifying Payment</option>
                   <option>Processing</option>
                   <option>Shipped</option>
                   <option>Delivered</option>
@@ -172,6 +179,7 @@ const OrdersPage = () => {
             transform: scale(1.01);
           }
           .bg-primary-light { background: rgba(109, 62, 33, 0.05); }
+          .bg-warning-light { background: rgba(255, 193, 7, 0.1); }
           .bg-info-light { background: rgba(13, 202, 240, 0.05); }
           .bg-success-light { background: rgba(25, 135, 84, 0.05); }
         `}

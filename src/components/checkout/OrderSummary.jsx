@@ -12,7 +12,15 @@ const OrderSummary = ({
   subtotal,
   deliveryFee,
   deliveryBreakdown,
-  orderError
+  orderError,
+  couponCode,
+  setCouponCode,
+  handleApplyCoupon,
+  appliedCoupon,
+  couponDiscount,
+  handleRemoveCoupon,
+  paymentMethod,
+  setPaymentMethod
 }) => (
   <div className="sticky-top" style={{ top: '120px' }}>
     <div className="bg-white rounded-5 shadow-premium border border-light overflow-hidden">
@@ -81,6 +89,56 @@ const OrderSummary = ({
             <span>Items Total ({checkoutType})</span>
             <span>₦{subtotal.toLocaleString()}</span>
           </div>
+
+          {/* Coupon Section */}
+          <div className="py-2 border-bottom border-light">
+            {!appliedCoupon ? (
+              <div className="d-flex gap-2">
+                <input
+                  type="text"
+                  className="form-control rounded-pill tiny text-uppercase tracking-widest px-3 bg-light border-0 shadow-none"
+                  placeholder="Enter discount code"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      if (couponCode.trim()) handleApplyCoupon(e)
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  variant="dark"
+                  className="rounded-pill tiny text-uppercase tracking-widest px-3 fw-bold"
+                  disabled={!couponCode.trim()}
+                >
+                  Apply
+                </Button>
+              </div>
+            ) : (
+              <div className="d-flex align-items-center justify-content-between bg-success bg-opacity-10 p-2 px-3 rounded-pill">
+                <div className="d-flex align-items-center gap-2">
+                  <span className="tiny fw-bold text-light text-uppercase tracking-widest">{appliedCoupon.code}</span>
+                  <span className="badge bg-success rounded-pill tiny">
+                    {appliedCoupon.type === 'percentage' ? `${appliedCoupon.amount}% OFF` : `₦${appliedCoupon.amount} OFF`}
+                  </span>
+                </div>
+                <button type="button" onClick={handleRemoveCoupon} className="btn btn-link p-0 text-danger shadow-none">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {couponDiscount > 0 && (
+            <div className="d-flex justify-content-between text-success tiny text-uppercase fw-bold tracking-widest animate-pulse">
+              <span>Coupon Discount</span>
+              <span>- ₦{couponDiscount.toLocaleString()}</span>
+            </div>
+          )}
+
           <div className="d-flex flex-column gap-2 mb-2">
             <div className="d-flex justify-content-between opacity-50 tiny text-uppercase fw-bold tracking-widest">
               <span>Delivery Fee</span>
@@ -108,7 +166,26 @@ const OrderSummary = ({
           <hr className="my-1 opacity-10" />
           <div className="d-flex justify-content-between align-items-center">
             <h5 className="fw-bold text-main mb-0">Grand Total</h5>
-            <h4 className="fw-bold text-primary mb-0">₦{(subtotal + deliveryFee).toLocaleString()}</h4>
+            <h4 className="fw-bold text-primary mb-0">₦{((subtotal - couponDiscount) + deliveryFee).toLocaleString()}</h4>
+          </div>
+          <div className="d-flex flex-column gap-2 mt-2 mb-3">
+            <h6 className="tiny fw-bold text-main opacity-50 text-uppercase tracking-widest mb-1">Payment Method</h6>
+            <div className="d-flex gap-2">
+              <Button
+                variant={paymentMethod === 'paystack' ? 'dark' : 'outline-light'}
+                className={`flex-grow-1 rounded-pill tiny fw-bold text-uppercase p-2 ${paymentMethod !== 'paystack' ? 'text-main' : ''}`}
+                onClick={() => setPaymentMethod('paystack')}
+              >
+                Card / Online
+              </Button>
+              <Button
+                variant={paymentMethod === 'manual' ? 'dark' : 'outline-light'}
+                className={`flex-grow-1 rounded-pill tiny fw-bold text-uppercase p-2 ${paymentMethod !== 'manual' ? 'text-main' : ''}`}
+                onClick={() => setPaymentMethod('manual')}
+              >
+                Bank Transfer
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -118,7 +195,7 @@ const OrderSummary = ({
           variant="primary"
           className="w-100 rounded-pill py-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-premium border-0 text-uppercase tracking-widest tiny"
         >
-          Pay Now <ArrowRight size={20} />
+          {paymentMethod === 'manual' ? 'Complete Order' : 'Pay Now'} <ArrowRight size={20} />
         </Button>
 
         {orderError && (

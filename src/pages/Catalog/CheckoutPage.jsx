@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Container, Row, Col, Form } from 'react-bootstrap'
+import { Container, Row, Col, Form, Modal, Button as BsButton } from 'react-bootstrap'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { useAppUi } from '../../context/AppUiContext'
@@ -38,6 +38,14 @@ const CheckoutPage = () => {
   const [deliveryOptions, setDeliveryOptions] = useState([])
   const [selectedDeliveryId, setSelectedDeliveryId] = useState('')
   const [deliveryFee, setDeliveryFee] = useState(0)
+
+  const [couponCode, setCouponCode] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState(null)
+  
+  const [paymentMethod, setPaymentMethod] = useState('paystack')
+  const [showManualModal, setShowManualModal] = useState(false)
+  const [manualOrderId, setManualOrderId] = useState(null)
+  const [cancellingOrder, setCancellingOrder] = useState(false)
 
   const [formData, setFormData] = useState({
     fullName: profile?.full_name || '',
@@ -134,12 +142,64 @@ const CheckoutPage = () => {
 
   const subtotal = filteredItems.reduce((acc, item) => acc + (calculatePrice(item) * item.quantity), 0)
 
+  let couponDiscount = 0
+  if (appliedCoupon) {
+    if (appliedCoupon.type === 'percentage') {
+      couponDiscount = subtotal * (appliedCoupon.amount / 100)
+    } else {
+      couponDiscount = appliedCoupon.amount
+    }
+    couponDiscount = Math.min(couponDiscount, subtotal) // Cannot discount more than subtotal
+  }
+
   const totalWeight = filteredItems.reduce((acc, item) => {
     const weight = item.variant.weight || 0
     return acc + (weight * item.quantity)
   }, 0)
 
   const [deliveryBreakdown, setDeliveryBreakdown] = useState(null)
+
+  const handleApplyCoupon = async (e) => {
+    e.preventDefault()
+    if (!couponCode.trim()) {
+      addAlert('Please enter a coupon code', 'warning')
+      return
+    }
+    if (!isAuthenticated) {
+      addAlert('Please sign in to use coupons', 'warning')
+      return
+    }
+
+    setSubtleLoading(true, 'Verifying coupon...')
+    try {
+      const { data, error } = await supabase.rpc('latej_validate_coupon', {
+        p_code: couponCode.trim().toUpperCase(),
+        p_user_id: user.id,
+        p_order_amount: subtotal
+      })
+
+      if (error) throw error
+
+      if (!data.is_valid) {
+        addAlert(data.message, 'error')
+        setAppliedCoupon(null)
+        return
+      }
+
+      setAppliedCoupon(data.coupon)
+      addAlert(data.message, 'success')
+    } catch (err) {
+      addAlert(err.message || 'Failed to validate coupon', 'error')
+      setAppliedCoupon(null)
+    } finally {
+      setSubtleLoading(false)
+    }
+  }
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null)
+    setCouponCode('')
+  }
 
   // Delivery fee logic
   useEffect(() => {
@@ -208,6 +268,62 @@ const CheckoutPage = () => {
 
   const [orderError, setOrderError] = useState(null)
 
+  const handleCancelManualOrder = async () => {
+    setCancellingOrder(true)
+    setGlobalLoading(true, 'Cancelling order and releasing stock...')
+    try {
+      const { error } = await supabase.from('latej_orders').delete().eq('id', manualOrderId)
+      if (error) throw error
+      
+      addAlert('Order cancelled and items released back to stock.', 'info')
+      setShowManualModal(false)
+      setManualOrderId(null)
+    } catch (err) {
+      console.error(err)
+      addAlert('Failed to cancel order. Please try again or contact support.', 'error')
+    } finally {
+      setCancellingOrder(false)
+      setGlobalLoading(false)
+    }
+  }
+
+  const handleConfirmManualPayment = async () => {
+    setGlobalLoading(true, 'Confirming your transfer...')
+    try {
+      const { error } = await supabase
+        .from('latej_orders')
+        .update({ status: 'verifying_manual_payment' })
+        .eq('id', manualOrderId)
+      
+      if (error) throw error
+
+      // Trigger email dispatch gracefully
+      try {
+        await supabase.functions.invoke('send-email', {
+          body: {
+            to: formData.email,
+            subject: 'We are verifying your manual payment',
+            template: 'order_status_update',
+            params: {
+              customerName: formData.fullName,
+              orderId: manualOrderId,
+              newStatus: 'Verifying Manual Payment'
+            }
+          }
+        })
+      } catch (e) { console.error('Email failed', e) }
+
+      addAlert('Payment submitted for verification. You will be notified once approved!', 'success')
+      setShowManualModal(false)
+      navigate(`/dashboard/orders?id=${manualOrderId}`, { replace: true })
+    } catch (err) {
+      console.error(err)
+      addAlert('Failed to verify payment submission.', 'error')
+    } finally {
+      setGlobalLoading(false)
+    }
+  }
+
   const handleCompleteOrder = async (e) => {
     if (e) e.preventDefault()
     setOrderError(null)
@@ -237,12 +353,30 @@ const CheckoutPage = () => {
         input_delivery_fee: deliveryFee,
         input_address_info: formData,
         input_idempotency_key: idempotencyKey,
-        input_tx_ref: finalTxRef
+        input_tx_ref: finalTxRef,
+        input_coupon_code: appliedCoupon ? appliedCoupon.code : null,
+        input_payment_method: paymentMethod
       })
 
       if (error) {
         console.log(error)
         throw error
+      }
+
+      // 3.5. Zero-Cost Bypass
+      if (data.total_amount === 0) {
+        setGlobalLoading(false)
+        addAlert('Order placed successfully! Your total was fully covered by the discount.', 'success')
+        navigate(`/dashboard/orders?id=${data.id}`, { replace: true })
+        return
+      }
+
+      // Manual Payment Intercept
+      if (paymentMethod === 'manual') {
+        setManualOrderId(data.id)
+        setShowManualModal(true)
+        setGlobalLoading(false)
+        return
       }
 
       // 4. Trigger Payment Window
@@ -261,7 +395,7 @@ const CheckoutPage = () => {
       const modal = window.FlutterwaveCheckout({
         public_key: FLUTTERWAVE_CONFIG.PUBLIC_KEY,
         tx_ref: finalTxRef,
-        amount: subtotal + deliveryFee,
+        amount: (subtotal - couponDiscount) + deliveryFee,
         currency: "NGN",
         payment_options: "card, account, ussd",
         customer: {
@@ -338,11 +472,50 @@ const CheckoutPage = () => {
                 deliveryFee={deliveryFee}
                 deliveryBreakdown={deliveryBreakdown}
                 orderError={orderError}
+                couponCode={couponCode}
+                setCouponCode={setCouponCode}
+                handleApplyCoupon={handleApplyCoupon}
+                appliedCoupon={appliedCoupon}
+                couponDiscount={couponDiscount}
+                handleRemoveCoupon={handleRemoveCoupon}
+                paymentMethod={paymentMethod}
+                setPaymentMethod={setPaymentMethod}
               />
             </Col>
           </Row>
         </Form>
       </Container>
+
+      {/* Manual Payment Verification Modal */}
+      <Modal show={showManualModal} onHide={() => {}} backdrop="static" keyboard={false} centered className="manual-payment-modal">
+        <Modal.Header className="border-0 pb-0 text-center justify-content-center pt-4">
+          <Modal.Title className="fw-bold text-main">Complete Your Transfer</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-4 text-center">
+          <p className="text-main opacity-75 small leading-relaxed mb-4">
+            Your order has been reserved! Please transfer the exact amount of <strong className="text-primary fs-5">₦{((subtotal - couponDiscount) + deliveryFee).toLocaleString()}</strong> to the account below.
+          </p>
+          <div className="bg-light p-4 rounded-4 border border-light mb-4 text-start">
+            <h6 className="tiny text-uppercase fw-bold opacity-50 mb-1">Bank Name</h6>
+            <p className="fw-bold text-main mb-3">Guaranty Trust Bank (GTB)</p>
+            
+            <h6 className="tiny text-uppercase fw-bold opacity-50 mb-1">Account Number</h6>
+            <p className="fw-bold text-primary fs-3 mb-3 tracking-widest">0123456789</p>
+            
+            <h6 className="tiny text-uppercase fw-bold opacity-50 mb-1">Account Name</h6>
+            <p className="fw-bold text-main mb-0">La Tej Creations</p>
+          </div>
+          <p className="tiny opacity-50 fst-italic">Do not close this window until you have successfully made the transfer.</p>
+        </Modal.Body>
+        <Modal.Footer className="border-0 pt-0 pb-4 px-4 flex-nowrap">
+          <BsButton variant="light" className="w-50 rounded-pill fw-bold text-danger opacity-75 hover-opacity-100" onClick={handleCancelManualOrder} disabled={cancellingOrder}>
+            Cancel Order
+          </BsButton>
+          <BsButton variant="primary" className="w-50 rounded-pill fw-bold shadow-sm" onClick={handleConfirmManualPayment}>
+            I've Made Payment
+          </BsButton>
+        </Modal.Footer>
+      </Modal>
 
       <style>
         {`
