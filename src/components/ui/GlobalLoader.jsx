@@ -11,6 +11,8 @@ import { useAppUi } from '../../context/AppUiContext'
 const GlobalLoader = ({ tempLoad = false }) => {
   const { globalLoading } = useAppUi()
 
+  if (!globalLoading?.show && !tempLoad) return null
+
   const content = (
     <AnimatePresence>
       {(globalLoading?.show || tempLoad) && (

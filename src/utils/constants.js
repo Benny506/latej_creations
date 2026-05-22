@@ -8,9 +8,9 @@
  * The definitive contact manifest for professional brand orchestrations.
  */
 export const ADMIN_CONFIG = {
-  // email: 'hello@latejcreations.com',
-  email: 'olomufeh@gmail.com',
-  phone: '+234 812 345 6789',
+  email: 'latejcreations@gmail.com',
+  // email: 'olomufeh@gmail.com',
+  phone: '+234 706 850 5982',
   location: 'Lagos, Nigeria',
   name: 'La Tejcreations Admin'
 }

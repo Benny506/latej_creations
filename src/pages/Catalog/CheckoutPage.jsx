@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { Container, Row, Col, Form, Modal, Button as BsButton } from 'react-bootstrap'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
+import { usePaystackPayment } from 'react-paystack'
 import { useAppUi } from '../../context/AppUiContext'
-import useScript from '../../hooks/useScript'
 import supabase from '../../utils/supabase'
 import { updateQuantityThunk, removeItemThunk, setCartData } from '../../store/slices/cartSlice'
 
@@ -13,7 +13,7 @@ import CheckoutTips from '../../components/checkout/CheckoutTips'
 import OrderTypeSelector from '../../components/checkout/OrderTypeSelector'
 import DeliveryForm from '../../components/checkout/DeliveryForm'
 import OrderSummary from '../../components/checkout/OrderSummary'
-import { FLUTTERWAVE_CONFIG } from '../../utils/flutterwave'
+import { PAYSTACK_CONFIG } from '../../utils/paystack'
 
 /**
  * CheckoutPage Component
@@ -24,9 +24,6 @@ const CheckoutPage = () => {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const { setGlobalLoading, setSubtleLoading, addAlert } = useAppUi()
-
-  // Use dynamic script loader for resilience
-  const sdkStatus = useScript('https://checkout.flutterwave.com/v3.js')
 
   const { isAuthenticated, user, profile } = useSelector(state => state.auth)
   const { items: reduxItems } = useSelector(state => state.cart)
@@ -57,6 +54,10 @@ const CheckoutPage = () => {
     address: '',
     notes: ''
   })
+  
+  const [pendingCheckoutData, setPendingCheckoutData] = useState(null)
+
+
 
   /**
    * Robust data loading to fix "0 items" bug
@@ -239,6 +240,44 @@ const CheckoutPage = () => {
     setFormData(prev => ({ ...prev, state: option.location_name }))
   }, [selectedDeliveryId, totalWeight, deliveryOptions])
 
+  const paystackConfig = {
+    reference: pendingCheckoutData?.txRef || '',
+    email: formData.email,
+    amount: Math.round(((subtotal - couponDiscount) + deliveryFee) * 100), // Paystack expects amount in kobo
+    publicKey: PAYSTACK_CONFIG.PUBLIC_KEY,
+    currency: 'NGN',
+    metadata: {
+      custom_fields: [
+        { display_name: "Customer Name", variable_name: "customer_name", value: formData.fullName },
+        { display_name: "Phone Number", variable_name: "phone_number", value: formData.whatsapp }
+      ]
+    }
+  }
+
+  const initializePayment = usePaystackPayment(paystackConfig)
+
+  useEffect(() => {
+    if (pendingCheckoutData) {
+      initializePayment({
+        onSuccess: (response) => {
+          console.log("Payment Manifested:", response);
+          if (response.status === 'success') {
+            addAlert('Payment successful! Your order is being processed.', 'success');
+            setTimeout(() => {
+              navigate(`/dashboard/orders?id=${pendingCheckoutData.orderId}`, { replace: true });
+            }, 1000);
+          }
+        },
+        onClose: () => {
+          addAlert('Payment window closed. You can track your order in your dashboard.', 'info');
+          navigate(`/dashboard/orders?id=${pendingCheckoutData.orderId}`, { replace: true });
+        }
+      });
+      setGlobalLoading(false);
+      setPendingCheckoutData(null);
+    }
+  }, [pendingCheckoutData, initializePayment, navigate, addAlert, setGlobalLoading])
+
   // Interaction Registry
   const handleUpdateQuantity = async (variantId, newQty) => {
     setSubtleLoading(true, 'Updating your items...')
@@ -380,56 +419,12 @@ const CheckoutPage = () => {
       }
 
       // 4. Trigger Payment Window
-      if (sdkStatus === 'loading') {
-        setGlobalLoading(false)
-        addAlert('The payment system is still initializing. Please wait a second.', 'info')
-        return
-      }
 
-      if (sdkStatus === 'error') {
-        setGlobalLoading(false)
-        addAlert('The payment gateway was blocked. Please check your internet or refresh the page.', 'error')
-        return
-      }
-
-      const modal = window.FlutterwaveCheckout({
-        public_key: FLUTTERWAVE_CONFIG.PUBLIC_KEY,
-        tx_ref: finalTxRef,
-        amount: (subtotal - couponDiscount) + deliveryFee,
-        currency: "NGN",
-        payment_options: "card, account, ussd",
-        customer: {
-          email: formData.email,
-          phone_number: formData.whatsapp,
-          name: formData.fullName,
-        },
-        customizations: {
-          title: FLUTTERWAVE_CONFIG.CUSTOM_TITLE,
-          description: FLUTTERWAVE_CONFIG.CUSTOM_DESCRIPTION,
-          logo: FLUTTERWAVE_CONFIG.CUSTOM_LOGO,
-        },
-        callback: (paymentData) => {
-          console.log("Payment Manifested:", paymentData);
-          const status = paymentData.status?.toLowerCase();
-
-          if (status === 'successful' || status === 'success' || status === 'completed') {
-            addAlert('Payment successful! Your order is being processed.', 'success');
-
-            // Automated dismissal and sync
-            if (modal && typeof modal.close === 'function') {
-              modal.close();
-            }
-
-            setTimeout(() => {
-              navigate(`/dashboard/orders?id=${data.id}`, { replace: true });
-            }, 1000);
-          }
-        },
-        onclose: () => {
-          addAlert('Payment window closed. You can track your order in your dashboard.', 'info');
-          navigate(`/dashboard/orders?id=${data.id}`, { replace: true });
-        }
-      });
+      // 4. Trigger Payment Window
+      setPendingCheckoutData({
+        txRef: finalTxRef,
+        orderId: data.id
+      })
     } catch (err) {
       addAlert(err.message, 'error')
       setOrderError(err.message)

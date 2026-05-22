@@ -28,7 +28,7 @@ const GlobalNavbar = () => {
 
   return (
     <>
-      <Navbar expand="lg" fixed="top" className="bg-white py-3 shadow-premium transition-all" style={{ zIndex: 1050 }}>
+      <Navbar expand="lg" sticky="top" className="bg-white py-3 shadow-premium transition-all" style={{ zIndex: 1050, top: 'var(--banner-height, 0px)' }}>
         <Container>
           {/* Brand Manifestation */}
           <Navbar.Brand as={Link} to="/" className="fw-bold text-main d-flex align-items-center gap-3">

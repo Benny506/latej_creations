@@ -149,13 +149,13 @@ const CartDrawer = () => {
                           <div className="d-flex justify-content-between align-items-start mb-1">
                             <div className="d-flex flex-column gap-1">
                               <h6 className="fw-bold text-main mb-0 pe-4 leading-tight">{item.product.name}</h6>
-                              {item.product.type === 'retail' && (
-                                <div className="d-flex">
-                                  <Badge bg="white" className="text-primary tiny fw-bold border border-light rounded-pill px-2 py-1" style={{ fontSize: '0.6rem' }}>
-                                    {item.variant.stock} left
-                                  </Badge>
-                                </div>
-                              )}
+                              {/* {item.product.type === 'retail' && ( */}
+                              <div className="d-flex">
+                                <Badge bg="white" className="text-primary tiny fw-bold border border-light rounded-pill px-2 py-1" style={{ fontSize: '0.6rem' }}>
+                                  {item.variant.stock} left
+                                </Badge>
+                              </div>
+                              {/* )} */}
                             </div>
                             <button
                               onClick={() => handleRemoveItem(item.variant.id)}

@@ -12,6 +12,8 @@ import { useAppUi } from '../../context/AppUiContext'
 const SubtleLoader = () => {
   const { subtleLoading } = useAppUi()
 
+  if (!subtleLoading?.show) return null
+
   const content = (
     <AnimatePresence>
       {subtleLoading?.show && (

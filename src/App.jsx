@@ -9,6 +9,7 @@ import AppAlertStack from './components/ui/AppAlertStack'
 import ConfirmModal from './components/ui/ConfirmModal'
 import GlobalNavbar from './components/layout/Navbar'
 import GlobalFooter from './components/layout/Footer'
+import SiteBanner from './components/layout/SiteBanner'
 import DataInitializer from './components/layout/DataInitializer'
 import ScrollToTop from './components/layout/ScrollToTop'
 import AutoLogin from './components/auth/AutoLogin'
@@ -71,6 +72,9 @@ const AppContent = () => {
       <ConfirmModal />
       <CartDrawer />
       {!isAuthPage && <ChatSupport />}
+
+      {/* Top Banner (Hidden on Auth) */}
+      {!isAuthPage && <SiteBanner />}
 
       {/* Navigation (Hidden on Auth & Dashboard Discovery) */}
       {!shouldHideLayout && <GlobalNavbar />}

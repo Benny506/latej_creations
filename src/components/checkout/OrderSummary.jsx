@@ -57,11 +57,11 @@ const OrderSummary = ({
                   <div className="flex-grow-1 d-flex flex-column justify-content-between">
                     <div>
                       <h6 className="fw-bold text-main mb-0 tiny text-uppercase leading-tight">{item.product.name}</h6>
-                      {item.product.type === 'retail' && (
-                        <Badge bg="white" className="text-primary tiny fw-bold border border-light rounded-pill px-2 py-1" style={{ fontSize: '0.6rem' }}>
-                          {item.variant.stock} left
-                        </Badge>
-                      )}
+                      {/* {item.product.type === 'retail' && ( */}
+                      <Badge bg="white" className="text-primary tiny fw-bold border border-light rounded-pill px-2 py-1" style={{ fontSize: '0.6rem' }}>
+                        {item.variant.stock} left
+                      </Badge>
+                      {/* )} */}
                       <span className="tiny opacity-50 fw-bold">{item.variant.name}</span>
                     </div>
                     <div className="d-flex align-items-center justify-content-between">

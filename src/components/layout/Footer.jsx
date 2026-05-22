@@ -2,6 +2,7 @@ import React from 'react'
 import { Container, Row, Col } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from 'lucide-react'
+import { ADMIN_CONFIG } from '../../utils/constants'
 
 /**
  * Global Footer Component
@@ -82,15 +83,15 @@ const GlobalFooter = () => {
             <ul className="list-unstyled d-grid gap-3">
               <li className="d-flex align-items-center gap-3 text-dark opacity-75">
                 <MapPin size={18} className="text-primary" />
-                Lagos, Nigeria
+                {ADMIN_CONFIG.location}
               </li>
               <li className="d-flex align-items-center gap-3 text-dark opacity-75">
                 <Phone size={18} className="text-primary" />
-                +234 812 345 6789
+                {ADMIN_CONFIG.phone}
               </li>
               <li className="d-flex align-items-center gap-3 text-dark opacity-75">
                 <Mail size={18} className="text-primary" />
-                hello@latejcreations.com
+                {ADMIN_CONFIG.email}
               </li>
             </ul>
           </Col>

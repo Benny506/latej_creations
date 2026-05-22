@@ -20,6 +20,8 @@ const AppAlertStack = () => {
     }
   }
 
+  if (!alerts || alerts.length === 0) return null
+
   const content = (
     <div className="alert-stack position-fixed top-0 end-0 p-4" style={{ zIndex: 99998, width: '400px', maxWidth: '90vw' }}>
       <AnimatePresence>
