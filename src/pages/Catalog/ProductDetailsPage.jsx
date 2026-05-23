@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Container, Row, Col, Badge, Button, Form } from 'react-bootstrap'
 import { useSelector, useDispatch } from 'react-redux'
-import { 
-  ShoppingBag, 
-  ChevronLeft, 
-  Star, 
-  ShieldCheck, 
-  Truck, 
+import {
+  ShoppingBag,
+  ChevronLeft,
+  Star,
+  ShieldCheck,
+  Truck,
   RefreshCcw,
   CheckCircle2,
   Minus,
@@ -28,10 +28,10 @@ const ProductDetailsPage = () => {
   const { setSubtleLoading, addAlert } = useAppUi()
   const { products, catalogs } = useSelector(state => state.products)
   const { isAuthenticated } = useSelector(state => state.auth)
-  
+
   const product = products.find(p => p.id === id)
   const catalog = catalogs.find(c => c.id === product?.catalog_id)
-  
+
   const [selectedVariant, setSelectedVariant] = useState(null)
   const [quantity, setQuantity] = useState(1)
 
@@ -58,10 +58,10 @@ const ProductDetailsPage = () => {
     }
 
     try {
-      await dispatch(addItemThunk({ 
-        product, 
-        variant: selectedVariant, 
-        quantity 
+      await dispatch(addItemThunk({
+        product,
+        variant: selectedVariant,
+        quantity
       })).unwrap()
 
       addAlert(`${product.name} added to cart`, 'success')
@@ -79,9 +79,7 @@ const ProductDetailsPage = () => {
   const isRetail = product.type === 'retail'
   const isWholesale = product.type === 'wholesale'
 
-  const displayPrice = isWholesale 
-    ? catalog?.wholesale_price 
-    : selectedVariant?.price
+  const displayPrice = selectedVariant?.price || product.variants?.[0]?.price
 
   const displayImage = selectedVariant?.images?.[0] || product.variants?.[0]?.images?.[0] || '/placeholder-product.jpg'
 
@@ -97,16 +95,16 @@ const ProductDetailsPage = () => {
         <Row className="g-5">
           {/* Visual Manifestation Section */}
           <Col lg={6}>
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               className="position-sticky top-0"
               style={{ top: '100px' }}
             >
               <div className="rounded-5 overflow-hidden shadow-premium bg-white p-3">
-                <img 
-                  src={displayImage} 
-                  alt={product.name} 
+                <img
+                  src={displayImage}
+                  alt={product.name}
                   className="w-100 h-100 object-fit-cover rounded-4"
                   style={{ minHeight: '500px', maxHeight: '700px' }}
                 />
@@ -138,34 +136,68 @@ const ProductDetailsPage = () => {
               {/* Variant Discovery Registry */}
               <div>
                 <h6 className="tiny text-uppercase fw-bold opacity-50 tracking-widest mb-3">Select Variant</h6>
-                <div className="d-flex flex-wrap gap-3">
-                  {product.variants?.map(v => (
-                    <div 
-                      key={v.id}
-                      onClick={() => setSelectedVariant(v)}
-                      className={`variant-card p-3 rounded-4 border-2 transition-all cursor-pointer d-flex flex-column gap-1 ${selectedVariant?.id === v.id ? 'border-primary bg-primary-light shadow-sm' : 'border-light bg-light opacity-75'}`}
-                      style={{ minWidth: '120px' }}
-                    >
-                      <span className="fw-bold text-main">{v.name}</span>
-                      {isRetail && <span className="tiny fw-bold text-primary">₦{v.price.toLocaleString()}</span>}
-                      
-                      {/* Stock Visibility Manifestation */}
-                      {isRetail && (
-                         <div className="mt-2 pt-2 border-top border-white border-opacity-50">
-                            {v.stock > 0 ? (
-                              <div className="d-flex align-items-center gap-1">
-                                <CheckCircle2 size={10} className={v.stock < 5 ? 'text-warning' : 'text-success'} />
-                                <span className={`tiny fw-bold ${v.stock < 5 ? 'text-warning' : 'text-success'}`} style={{ fontSize: '0.6rem' }}>
-                                  {v.stock < 5 ? `Low Stock: ${v.stock}` : `${v.stock} Available`}
-                                </span>
+                <div className="d-flex flex-wrap align-items-start gap-3">
+                  {product.variants?.map(v => {
+                    const isActive = selectedVariant?.id === v.id
+                    return (
+                      <motion.div
+                        key={v.id}
+                        onClick={() => setSelectedVariant(v)}
+                        whileHover={{ y: isActive ? 0 : -2 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`position-relative variant-card p-3 rounded-4 border-2 transition-all cursor-pointer d-flex flex-column gap-1 ${isActive
+                          ? 'border-primary shadow-premium bg-white'
+                          : 'border-light bg-light opacity-75 hover-opacity-100'
+                          }`}
+                        style={{ minWidth: '130px', zIndex: isActive ? 2 : 1 }}
+                      >
+                        {isActive && (
+                          <motion.div
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="position-absolute top-0 end-0 translate-middle bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                            style={{ width: '22px', height: '22px' }}
+                          >
+                            <CheckCircle2 size={12} strokeWidth={4} />
+                          </motion.div>
+                        )}
+                        {v.is_preorder && (
+                          <Badge bg="primary" className="text-white tiny text-uppercase tracking-widest align-self-start mb-2" style={{ fontSize: '0.55rem', padding: '0.3rem 0.5rem' }}>
+                            Pre-order
+                          </Badge>
+                        )}
+                        {v.options && Object.keys(v.options).length > 0 ? (
+                          <div className="d-flex flex-column gap-1 mb-1">
+                            {Object.entries(v.options).map(([key, value]) => (
+                              <div key={key} className="d-flex align-items-center gap-2">
+                                <span className="tiny opacity-50 text-uppercase" style={{ fontSize: '0.65rem' }}>{key}:</span>
+                                <span className="fw-bold text-main small">{value}</span>
                               </div>
-                            ) : (
-                              <span className="tiny fw-bold text-danger" style={{ fontSize: '0.6rem' }}>Out of Stock</span>
-                            )}
-                         </div>
-                      )}
-                    </div>
-                  ))}
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="fw-bold text-main">Standard</span>
+                        )}
+                        <span className="tiny fw-bold text-primary">₦{Number(v.price).toLocaleString()}</span>
+
+                        {/* Stock Visibility Manifestation */}
+                        {/* {isRetail && ( */}
+                        <div className="mt-2 pt-2 border-top border-dark border-opacity-50">
+                          {v.stock > 0 ? (
+                            <div className="d-flex align-items-center gap-1">
+                              <CheckCircle2 size={10} className={v.stock < 5 ? 'text-warning' : 'text-success'} />
+                              <span className={`tiny fw-bold ${v.stock < 5 ? 'text-warning' : 'text-success'}`} style={{ fontSize: '0.6rem' }}>
+                                {v.stock < 5 ? `Low Stock: ${v.stock}` : `${v.stock} Available`}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="tiny fw-bold text-danger" style={{ fontSize: '0.6rem' }}>Out of Stock</span>
+                          )}
+                        </div>
+                        {/* )} */}
+                      </motion.div>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -174,14 +206,14 @@ const ProductDetailsPage = () => {
                 <Row className="align-items-center g-3">
                   <Col sm={4}>
                     <div className="d-flex align-items-center justify-content-between bg-white rounded-pill p-2 shadow-sm">
-                      <button 
+                      <button
                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
                         className="btn btn-link text-main p-1 border-0 shadow-none"
                       >
                         <Minus size={18} />
                       </button>
                       <span className="fw-bold px-3">{quantity}</span>
-                      <button 
+                      <button
                         onClick={() => setQuantity(quantity + 1)}
                         className="btn btn-link text-main p-1 border-0 shadow-none"
                       >
@@ -190,10 +222,10 @@ const ProductDetailsPage = () => {
                     </div>
                   </Col>
                   <Col sm={8}>
-                    <Button 
+                    <Button
                       onClick={handleAddToCart}
                       disabled={!selectedVariant || (isRetail && selectedVariant.stock === 0)}
-                      variant="primary" 
+                      variant="primary"
                       className="w-100 rounded-pill py-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-premium border-0"
                     >
                       <ShoppingBag size={20} /> Add to Cart

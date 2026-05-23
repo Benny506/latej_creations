@@ -4,7 +4,9 @@ import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-
 import { useAppUi } from '../../context/AppUiContext'
 import ArtisanalIcon from '../ui/ArtisanalIcon'
 import supabase from '../../utils/supabase'
-import { ChevronDown, X } from 'lucide-react'
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchPreorderWindows } from '../../store/slices/preorderSlice'
+import { ChevronDown, X, Clock, Calendar } from 'lucide-react'
 
 /**
  * SiteBanner Component
@@ -19,12 +21,42 @@ const SiteBanner = () => {
   const [isVisible, setIsVisible] = useState(true)
   const [showOffcanvas, setShowOffcanvas] = useState(false)
 
+  const dispatch = useDispatch()
+  const { windows, hasFetched: preorderHasFetched } = useSelector(state => state.preorder || { windows: [] })
+
   const { scrollY } = useScroll()
 
-  // 1. Resolve Tips from Context or DB
+  // 0. Trigger Preorder Fetch
+  useEffect(() => {
+    dispatch(fetchPreorderWindows())
+  }, [dispatch])
+
+  // 1. Resolve Tips from Context, DB, and Preorder Windows
   useEffect(() => {
     const resolveTips = async () => {
       let combinedTips = []
+
+      // Map Preorder Windows
+      const preorderTips = []
+      if (windows && windows.length > 0) {
+        const now = new Date()
+        windows.forEach(w => {
+          const startDate = w.start_time ? new Date(w.start_time) : null
+          const endDate = new Date(w.end_time)
+          
+          const formatOpt = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
+          const startStr = startDate ? startDate.toLocaleDateString('en-US', formatOpt) : 'Now'
+          const endStr = endDate.toLocaleDateString('en-US', formatOpt)
+          
+          preorderTips.push({
+            id: `preorder-${w.mode}`,
+            title: `${startDate && startDate > now ? 'Upcoming' : 'Active'} Pre-order`,
+            description: `From ${startStr} to ${endStr}`,
+            category: `PRE-ORDER ${w.mode.toUpperCase()}`,
+            icon: 'diamond'
+          })
+        })
+      }
 
       // Try reading from context
       const retailItems = siteContent?.retail_tips?.sections?.main?.items || []
@@ -33,7 +65,7 @@ const SiteBanner = () => {
       if (retailItems.length > 0 || wholesaleItems.length > 0) {
         const rTips = retailItems.map(t => ({ ...t, category: 'RETAIL' }))
         const wTips = wholesaleItems.map(t => ({ ...t, category: 'WHOLESALE' }))
-        combinedTips = [...rTips, ...wTips]
+        combinedTips = [...preorderTips, ...rTips, ...wTips]
         setTips(combinedTips)
         return
       }
@@ -61,7 +93,7 @@ const SiteBanner = () => {
 
             const rTips = rItems.map(t => ({ ...t, category: 'RETAIL' }))
             const wTips = wItems.map(t => ({ ...t, category: 'WHOLESALE' }))
-            combinedTips = [...rTips, ...wTips]
+            combinedTips = [...preorderTips, ...rTips, ...wTips]
 
             setTips(combinedTips)
           }
@@ -75,7 +107,7 @@ const SiteBanner = () => {
     }
 
     resolveTips()
-  }, [siteContent, hasAttemptedFetch, isFetching, setSiteContent])
+  }, [siteContent, hasAttemptedFetch, isFetching, setSiteContent, windows, preorderHasFetched])
 
   // 2. Cycling Logic
   useEffect(() => {
@@ -105,7 +137,7 @@ const SiteBanner = () => {
     } else {
       document.documentElement.style.setProperty('--banner-height', '0px')
     }
-    
+
     // Cleanup on unmount
     return () => {
       document.documentElement.style.setProperty('--banner-height', '0px')
@@ -169,7 +201,7 @@ const SiteBanner = () => {
       <Offcanvas scroll show={showOffcanvas} onHide={() => setShowOffcanvas(false)} placement="top" style={{ height: 'auto', maxHeight: '70vh' }} className="rounded-bottom-4 shadow-premium">
         <Offcanvas.Header className="border-bottom border-light d-flex justify-content-between align-items-center">
           <Offcanvas.Title className="fw-bold text-main tiny text-uppercase tracking-widest mb-0">
-            Aṣọ̀lé Sẹ̀kẹ̀sẹ̀ Guidelines
+            Aṣọ̀lé Sẹ̀kẹ̀sẹ̀ Guidelines (Debug: W{windows?.length || 0}, P{tips.filter(t => t.category?.includes('PRE-ORDER')).length})
           </Offcanvas.Title>
           <button type="button" onClick={() => setShowOffcanvas(false)} className="btn btn-link text-main p-1 border-0 opacity-50 hover-opacity-100 shadow-none m-0">
             <X size={20} />

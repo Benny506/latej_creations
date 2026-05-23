@@ -20,11 +20,9 @@ const ProductCard = ({ product }) => {
 
   // Institutional Pricing Discovery
   const catalog = catalogs.find(c => c.id === product.catalog_id)
-  const isWholesale = product.type === 'wholesale'
+  const hasPreorder = product.variants?.some(v => v.is_preorder)
 
-  const displayPrice = isWholesale
-    ? catalog?.wholesale_price
-    : product.variants?.[0]?.price
+  const displayPrice = product.variants?.[0]?.price
 
   const displayImage = product.variants?.[0]?.images?.[0] || '/placeholder-product.jpg'
 
@@ -77,12 +75,22 @@ const ProductCard = ({ product }) => {
             />
           </Link>
 
-          <Badge
-            bg="white"
-            className="position-absolute top-0 end-0 m-3 text-primary shadow-sm rounded-pill px-3 py-2 tiny text-uppercase tracking-widest border border-light"
-          >
-            {product.type}
-          </Badge>
+          <div className="position-absolute top-0 end-0 m-3 d-flex flex-column gap-2 align-items-end z-1">
+            <Badge
+              bg="white"
+              className="text-primary shadow-sm rounded-pill px-3 py-2 tiny text-uppercase tracking-widest border border-light"
+            >
+              {product.type}
+            </Badge>
+            {hasPreorder && (
+              <Badge
+                bg="primary"
+                className="text-white shadow-sm rounded-pill px-3 py-2 tiny text-uppercase tracking-widest"
+              >
+                HAS PRE-ORDER
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* Discovery Narrative Layer */}

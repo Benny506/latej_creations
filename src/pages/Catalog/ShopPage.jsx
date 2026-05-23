@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Container, Row, Col, Badge, Form, InputGroup, Button } from 'react-bootstrap'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import ProductCard from '../../components/catalog/ProductCard'
+import { fetchPreorderWindows } from '../../store/slices/preorderSlice'
 import { Search, Filter, SlidersHorizontal, Package, ArrowRight, ShoppingBag } from 'lucide-react'
 import { useAppUi } from '../../context/AppUiContext'
 import ArtisanalIcon from '../../components/ui/ArtisanalIcon'
@@ -60,9 +61,19 @@ const RulesCarousel = ({ tips }) => {
  * The main storefront for Retail items.
  */
 const ShopPage = () => {
+  const dispatch = useDispatch()
   const { products, catalogs } = useSelector(state => state.products)
+  const { windows } = useSelector(state => state.preorder || { windows: [] })
   const { siteContent } = useAppUi()
   const retailTips = siteContent?.retail_tips?.sections?.main?.items || []
+
+  useEffect(() => {
+    dispatch(fetchPreorderWindows())
+  }, [dispatch])
+
+  const retailWindow = useMemo(() => {
+    return windows.find(w => w.mode === 'retail') || null
+  }, [windows])
 
   const [search, setSearch] = useState('')
   const [selectedCatalog, setSelectedCatalog] = useState('')
@@ -84,7 +95,7 @@ const ShopPage = () => {
       <Container className="py-5 my-5">
 
         {/* Top Wholesale Teaser Banner */}
-        <motion.div
+        {/* <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-primary text-white p-3 rounded-4 mb-5 d-flex flex-wrap align-items-center justify-content-between shadow-sm"
@@ -97,11 +108,13 @@ const ShopPage = () => {
           <Link to="/wholesale" className="btn btn-white text-white rounded-pill px-4 tiny fw-bold border-0 shadow-sm transition-all hover-scale-105">
             View Wholesale
           </Link>
-        </motion.div>
+        </motion.div> */}
 
         {/* Header Section */}
         <div className="mb-5">
-          <div className="d-flex flex-wrap align-items-center justify-content-between gap-4 mb-5">
+          <div
+            className="d-flex flex-wrap align-items-center justify-content-between gap-4 mb-5"
+          >
             <div className="text-start">
               <Badge bg="primary" className="px-3 py-2 rounded-pill tiny text-uppercase fw-bold mb-3 shadow-sm border-0">
                 Retail
@@ -112,7 +125,30 @@ const ShopPage = () => {
               <p className="tiny text-uppercase fw-bold opacity-50 mb-0">Showing {filteredProducts.length} items</p>
             </div>
 
-            <RulesCarousel tips={retailTips} />
+            <Row className='g-3 flex-wrap justify-content-between w-100'>
+              <Col lg={retailWindow ? 6 : 8}>
+                <RulesCarousel tips={retailTips} />
+              </Col>
+
+              {retailWindow && (
+                <Col lg={6} className='d-flex align-items-center justify-content-lg-end justify-content-center'>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="p-4 rounded-4 mb-5 shadow-sm text-center border border-2 border-primary position-relative overflow-hidden"
+                    style={{ background: 'linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.05) 0%, rgba(var(--bs-primary-rgb), 0.15) 100%)' }}
+                  >
+                    {/* <div className="position-absolute top-0 start-0 w-100 h-100 bg-primary opacity-10" style={{ pointerEvents: 'none' }}></div> */}
+                    <h5 className="fw-bold text-main mb-2 tracking-widest text-uppercase d-flex align-items-center justify-content-center gap-2">
+                      <span className="badge bg-primary text-light p-2">ACTIVE PRE-ORDER</span>
+                    </h5>
+                    <p className="mb-0 small fw-bold opacity-75">
+                      Secure your PRE-ORDER pieces now! Window closes on: {new Date(retailWindow.end_time).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </motion.div>
+                </Col>
+              )}
+            </Row>
           </div>
 
           <div className="bg-white p-4 rounded-5 shadow-premium border border-light">

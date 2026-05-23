@@ -45,7 +45,7 @@ const PoliciesPage = () => {
       heading: 'Wholesale Partnership Terms',
       description: 'Our wholesale channel is a professional partnership registry designed for high-volume procurement.',
       points: [
-        { label: "Minimum Order Quantity", text: "A strict MOQ of 20 units per collection is enforced for wholesale pricing." },
+        { label: "Minimum Order Quantity", text: "A strict MOQ of 20 units per product is enforced for wholesale pricing." },
         { label: "Partner Verification", "text": "We reserve the right to verify business credentials to maintain the exclusivity of our heritage collections." },
         { label: "Cancellations", "text": "Wholesale orders cannot be cancelled once the production manifest has been initialized." }
       ]

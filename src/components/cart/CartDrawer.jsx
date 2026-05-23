@@ -35,10 +35,6 @@ const CartDrawer = () => {
 
   // Institutional Pricing & Total Calculation
   const calculateItemPrice = (item) => {
-    if (item.product.type === 'wholesale') {
-      const catalog = catalogs.find(c => c.id === item.product.catalog_id)
-      return catalog?.wholesale_price || 0
-    }
     return item.variant.price || 0
   }
 

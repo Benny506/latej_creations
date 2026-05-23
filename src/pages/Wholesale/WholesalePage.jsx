@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Container, Row, Col, Badge, Form, InputGroup } from 'react-bootstrap'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
 import ProductCard from '../../components/catalog/ProductCard'
+import { fetchPreorderWindows } from '../../store/slices/preorderSlice'
 import { Search, Filter, SlidersHorizontal, Package } from 'lucide-react'
 import { useAppUi } from '../../context/AppUiContext'
 import ArtisanalIcon from '../../components/ui/ArtisanalIcon'
@@ -59,9 +60,19 @@ const RulesCarousel = ({ tips }) => {
  * A professional page for bulk ordering.
  */
 const WholesalePage = () => {
+  const dispatch = useDispatch()
   const { products, catalogs } = useSelector(state => state.products)
+  const { windows } = useSelector(state => state.preorder || { windows: [] })
   const { siteContent } = useAppUi()
   const wholesaleTips = siteContent?.wholesale_tips?.sections?.main?.items || []
+
+  useEffect(() => {
+    dispatch(fetchPreorderWindows())
+  }, [dispatch])
+
+  const wholesaleWindow = useMemo(() => {
+    return windows.find(w => w.mode === 'wholesale') || null
+  }, [windows])
   const [search, setSearch] = useState('')
   const [selectedCatalog, setSelectedCatalog] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
@@ -69,10 +80,9 @@ const WholesalePage = () => {
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
       if (p.type !== 'wholesale') return false
-      const catalog = catalogs.find(c => c.id === p.catalog_id)
       const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase())
       const matchesCatalog = selectedCatalog ? p.catalog_id === selectedCatalog : true
-      const matchesPrice = maxPrice ? (catalog?.wholesale_price <= parseFloat(maxPrice)) : true
+      const matchesPrice = maxPrice ? (p.variants?.[0]?.price <= parseFloat(maxPrice)) : true
       return matchesSearch && matchesCatalog && matchesPrice
     })
   }, [products, catalogs, search, selectedCatalog, maxPrice])
@@ -97,6 +107,22 @@ const WholesalePage = () => {
               <RulesCarousel tips={wholesaleTips} />
             </motion.div>
           </div>
+
+          {wholesaleWindow && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-4 rounded-4 mb-5 shadow-sm text-center border border-2 border-primary position-relative overflow-hidden"
+              style={{ background: 'linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.05) 0%, rgba(var(--bs-primary-rgb), 0.15) 100%)' }}
+            >
+              <h5 className="fw-bold text-main mb-2 tracking-widest text-uppercase d-flex align-items-center justify-content-center gap-2">
+                <span className="badge bg-primary text-white p-2">ACTIVE WHOLESALE PRE-ORDER</span>
+              </h5>
+              <p className="mb-0 small fw-bold opacity-75">
+                Window is open for bulk pre-orders! Closes on: {new Date(wholesaleWindow.end_time).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </motion.div>
+          )}
 
           <div className="bg-white p-4 rounded-5 shadow-premium border border-light">
             <Row className="g-4">

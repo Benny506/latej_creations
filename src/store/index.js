@@ -4,6 +4,7 @@ import cartReducer from './slices/cartSlice'
 
 import authReducer from './slices/authSlice'
 import latejOrderReducer from './slices/latejOrderSlice'
+import preorderReducer from './slices/preorderSlice'
 
 /**
  * Global Redux Store
@@ -14,7 +15,8 @@ const store = configureStore({
     products: productReducer,
     cart: cartReducer,
     auth: authReducer,
-    latejOrders: latejOrderReducer
+    latejOrders: latejOrderReducer,
+    preorder: preorderReducer
   }
 })
 

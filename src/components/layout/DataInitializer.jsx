@@ -32,7 +32,7 @@ const DataInitializer = () => {
       try {
         const [catRes, prodRes] = await Promise.all([
           supabase.from('latej_catalogs').select('*'),
-          supabase.from('latej_products').select('*, variants:latej_product_variants(*)').order('created_at', { ascending: false })
+          supabase.from('latej_products').select('*, variants:latej_product_variants(*)').eq('is_active', true).order('created_at', { ascending: false })
         ])
 
         if (catRes.error) throw catRes.error

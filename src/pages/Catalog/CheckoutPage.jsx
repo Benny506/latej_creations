@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Container, Row, Col, Form, Modal, Button as BsButton } from 'react-bootstrap'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
@@ -6,6 +6,9 @@ import { usePaystackPayment } from 'react-paystack'
 import { useAppUi } from '../../context/AppUiContext'
 import supabase from '../../utils/supabase'
 import { updateQuantityThunk, removeItemThunk, setCartData } from '../../store/slices/cartSlice'
+import { fetchPreorderWindows } from '../../store/slices/preorderSlice'
+import { motion } from 'framer-motion'
+import { CalendarClock, ShieldCheck } from 'lucide-react'
 
 // Modular Components Registry
 import CheckoutHeader from '../../components/checkout/CheckoutHeader'
@@ -27,6 +30,7 @@ const CheckoutPage = () => {
 
   const { isAuthenticated, user, profile } = useSelector(state => state.auth)
   const { items: reduxItems } = useSelector(state => state.cart)
+  const { windows } = useSelector(state => state.preorder || { windows: [] })
 
   // Local state for fresh data
   const [cartItems, setCartItems] = useState([])
@@ -38,7 +42,7 @@ const CheckoutPage = () => {
 
   const [couponCode, setCouponCode] = useState('')
   const [appliedCoupon, setAppliedCoupon] = useState(null)
-  
+
   const [paymentMethod, setPaymentMethod] = useState('paystack')
   const [showManualModal, setShowManualModal] = useState(false)
   const [manualOrderId, setManualOrderId] = useState(null)
@@ -54,7 +58,7 @@ const CheckoutPage = () => {
     address: '',
     notes: ''
   })
-  
+
   const [pendingCheckoutData, setPendingCheckoutData] = useState(null)
 
 
@@ -121,25 +125,29 @@ const CheckoutPage = () => {
       console.error('Checkout Load Error:', err)
       addAlert('We could not load your cart details. Please try again.', 'error')
     } finally {
-      console.log("HERE")
       setSubtleLoading(false)
     }
-  }, [isAuthenticated, user?.id, reduxItems, setSubtleLoading, addAlert])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, user?.id, setSubtleLoading, addAlert])
 
   useEffect(() => {
     loadCheckoutData()
-  }, [])
+    dispatch(fetchPreorderWindows())
+  }, [loadCheckoutData, dispatch])
 
   // Calculation Registry
   const filteredItems = cartItems.filter(i => i.product.type === checkoutType)
 
+  const activePreorderWindow = useMemo(() => {
+    // Only show if at least one item being checked out is a pre-order variant
+    const hasPreorderItem = filteredItems.some(item => item.variant?.is_preorder)
+    if (!hasPreorderItem) return null
+    return windows.find(w => w.mode === checkoutType) || null
+  }, [filteredItems, windows, checkoutType])
+
   const calculatePrice = useCallback((item) => {
-    if (item.product.type === 'wholesale') {
-      const cat = catalogs.find(c => c.id === item.product.catalog_id)
-      return cat?.wholesale_price || 0
-    }
     return item.variant.price || 0
-  }, [catalogs])
+  }, [])
 
   const subtotal = filteredItems.reduce((acc, item) => acc + (calculatePrice(item) * item.quantity), 0)
 
@@ -268,9 +276,22 @@ const CheckoutPage = () => {
             }, 1000);
           }
         },
-        onClose: () => {
-          addAlert('Payment window closed. You can track your order in your dashboard.', 'info');
-          navigate(`/dashboard/orders?id=${pendingCheckoutData.orderId}`, { replace: true });
+        onClose: async () => {
+          setGlobalLoading(true, 'Cancelling transaction...');
+          try {
+            // Delete the order to release stock and cleanup
+            const { error } = await supabase.from('latej_orders').delete().eq('id', pendingCheckoutData.orderId);
+            if (error) throw error;
+            addAlert('Payment cancelled. Your items have been released.', 'info');
+            // Navigate back to catalog since cart was cleared during order manifestation
+            navigate('/catalog');
+          } catch (err) {
+            console.error('Failed to cancel order:', err);
+            addAlert('Payment cancelled.', 'info');
+          } finally {
+            setGlobalLoading(false);
+            setPendingCheckoutData(null);
+          }
         }
       });
       setGlobalLoading(false);
@@ -313,7 +334,7 @@ const CheckoutPage = () => {
     try {
       const { error } = await supabase.from('latej_orders').delete().eq('id', manualOrderId)
       if (error) throw error
-      
+
       addAlert('Order cancelled and items released back to stock.', 'info')
       setShowManualModal(false)
       setManualOrderId(null)
@@ -333,7 +354,7 @@ const CheckoutPage = () => {
         .from('latej_orders')
         .update({ status: 'verifying_manual_payment' })
         .eq('id', manualOrderId)
-      
+
       if (error) throw error
 
       // Trigger email dispatch gracefully
@@ -445,6 +466,26 @@ const CheckoutPage = () => {
               <div className="d-flex flex-column gap-5">
                 <CheckoutTips type={checkoutType} />
                 <OrderTypeSelector checkoutType={checkoutType} setCheckoutType={setCheckoutType} />
+
+                {activePreorderWindow && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 rounded-4 shadow-sm border border-2 border-primary position-relative overflow-hidden"
+                    style={{ background: 'linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.05) 0%, rgba(var(--bs-primary-rgb), 0.1) 100%)' }}
+                  >
+                    <div className="d-flex align-items-center gap-3 mb-2">
+                      <CalendarClock className="text-primary" size={24} />
+                      <h5 className="fw-bold text-main mb-0 tracking-widest text-uppercase">
+                        Pre-order Items Included
+                      </h5>
+                    </div>
+                    <p className="mb-0 small text-main opacity-75 fw-bold ms-5">
+                      Your order contains pre-order items. These items will be processed after the {checkoutType} window closes on <span className="text-primary">{new Date(activePreorderWindow.end_time).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>. Delivery timelines will begin from this date.
+                    </p>
+                  </motion.div>
+                )}
+
                 <DeliveryForm
                   formData={formData}
                   setFormData={setFormData}
@@ -482,7 +523,7 @@ const CheckoutPage = () => {
       </Container>
 
       {/* Manual Payment Verification Modal */}
-      <Modal show={showManualModal} onHide={() => {}} backdrop="static" keyboard={false} centered className="manual-payment-modal">
+      <Modal show={showManualModal} onHide={() => { }} backdrop="static" keyboard={false} centered className="manual-payment-modal">
         <Modal.Header className="border-0 pb-0 text-center justify-content-center pt-4">
           <Modal.Title className="fw-bold text-main">Complete Your Transfer</Modal.Title>
         </Modal.Header>
@@ -493,10 +534,10 @@ const CheckoutPage = () => {
           <div className="bg-light p-4 rounded-4 border border-light mb-4 text-start">
             <h6 className="tiny text-uppercase fw-bold opacity-50 mb-1">Bank Name</h6>
             <p className="fw-bold text-main mb-3">Guaranty Trust Bank (GTB)</p>
-            
+
             <h6 className="tiny text-uppercase fw-bold opacity-50 mb-1">Account Number</h6>
             <p className="fw-bold text-primary fs-3 mb-3 tracking-widest">0123456789</p>
-            
+
             <h6 className="tiny text-uppercase fw-bold opacity-50 mb-1">Account Name</h6>
             <p className="fw-bold text-main mb-0">La Tej Creations</p>
           </div>
