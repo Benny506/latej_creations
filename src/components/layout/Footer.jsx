@@ -53,9 +53,15 @@ const GlobalFooter = () => {
               Quality craftsmanship meets modern native aesthetics.
             </p>
             <div className="d-flex gap-3 text-primary">
-              <Instagram size={20} />
-              <Facebook size={20} />
-              <FaTiktok size={20} />
+              <a href="https://www.instagram.com/latejcreations" target="_blank" rel="noopener noreferrer" className="text-primary text-decoration-none">
+                <Instagram size={20} />
+              </a>
+              <a href="https://www.facebook.com/share/1BC4NUuadU/" target="_blank" rel="noopener noreferrer" className="text-primary text-decoration-none">
+                <Facebook size={20} />
+              </a>
+              <a href="https://www.tiktok.com/@latejcreations" target="_blank" rel="noopener noreferrer" className="text-primary text-decoration-none">
+                <FaTiktok size={20} />
+              </a>
             </div>
           </Col>
 
