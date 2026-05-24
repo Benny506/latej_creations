@@ -11,7 +11,9 @@ import {
   RefreshCcw,
   CheckCircle2,
   Minus,
-  Plus
+  Plus,
+  ExternalLink,
+  ArrowRight
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { addItemThunk, openCart } from '../../store/slices/cartSlice'
@@ -200,6 +202,29 @@ const ProductDetailsPage = () => {
                   })}
                 </div>
               </div>
+
+              {/* External Product Media Link */}
+              {selectedVariant?.external_product_link && (
+                <div className="bg-white border border-primary p-4 rounded-5 mt-4 d-flex align-items-center justify-content-between position-relative overflow-hidden shadow-sm">
+                  <div className="position-absolute top-0 start-0 w-100 h-100" style={{ background: 'linear-gradient(45deg, rgba(var(--bs-primary-rgb), 0.05), transparent)' }} />
+                  <div className="position-relative z-1 pe-4">
+                    <h6 className="fw-bold text-main mb-1 d-flex align-items-center gap-2">
+                      <ExternalLink size={16} className="text-primary" /> Deeper Look
+                    </h6>
+                    <p className="tiny opacity-75 mb-0 leading-relaxed" style={{ fontSize: '0.65rem' }}>
+                      Discover more images, potential videos, and post-content styling for this exact variant!
+                    </p>
+                  </div>
+                  <a 
+                    href={selectedVariant.external_product_link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn btn-primary rounded-circle p-3 d-flex align-items-center justify-content-center shadow-sm position-relative z-1 flex-shrink-0"
+                  >
+                    <ArrowRight size={18} />
+                  </a>
+                </div>
+              )}
 
               {/* Procurement Action Registry */}
               <div className="bg-light p-4 rounded-5 mt-4">

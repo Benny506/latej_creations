@@ -10,7 +10,7 @@
 export const ADMIN_CONFIG = {
   email: 'latejcreations@gmail.com',
   // email: 'olomufeh@gmail.com',
-  phone: '+234 706 850 5982',
+  phone: '+234 708 870 8552',
   location: 'Lagos, Nigeria',
   name: 'La Tejcreations Admin'
 }

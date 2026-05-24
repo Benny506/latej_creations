@@ -2,7 +2,10 @@ import { useAppUi } from '../../context/AppUiContext'
 import Hero from './components/Hero'
 import BulkProduction from './components/BulkProduction'
 import RetailShowcase from './components/RetailShowcase'
+import ShopByCatalog from './components/ShopByCatalog'
+import PreorderRules from './components/PreorderRules'
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 
 /**
  * HomePage Component
@@ -26,8 +29,14 @@ const HomePage = () => {
       {/* Bulk Production: B2B Infrastructure & Consultation */}
       {/* <BulkProduction content={homeContent.bulk_production} /> */}
 
+      {/* Shop By Catalog: Dynamic Catalog List */}
+      <ShopByCatalog />
+
       {/* Retail Showcase: B2C Lifestyle & Product Line */}
       <RetailShowcase content={homeContent.retail_showcase} />
+
+      {/* Preorder Rules: Guidelines & Active Windows */}
+      <PreorderRules />
 
       {/* Brand Message Section */}
       <section className="py-5" style={{ background: 'var(--lt-earth-dark)', color: '#fff' }}>

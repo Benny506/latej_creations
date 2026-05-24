@@ -16,10 +16,12 @@ import AutoLogin from './components/auth/AutoLogin'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import CartDrawer from './components/cart/CartDrawer'
 import ChatSupport from './components/chat/ChatSupport'
+import ErrorBoundary from './components/ui/ErrorBoundary'
 
 // Pages
 import HomePage from './pages/Home/HomePage'
 import WholesalePage from './pages/Wholesale/WholesalePage'
+import CatalogPage from './pages/Catalog/CatalogPage'
 import ShopPage from './pages/Catalog/ShopPage'
 import AboutAsoLesekesePage from './pages/Catalog/AboutAsoLesekesePage'
 import ProductDetailsPage from './pages/Catalog/ProductDetailsPage'
@@ -34,6 +36,9 @@ import RegisterPage from './pages/Auth/RegisterPage'
 import VerifyOtpPage from './pages/Auth/VerifyOtpPage'
 import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage'
 import ResetPasswordPage from './pages/Auth/ResetPasswordPage'
+
+// Fallback Pages
+import NotFoundPage from './pages/NotFound/NotFoundPage'
 
 // Dashboard Pages
 import OrdersPage from './pages/Dashboard/OrdersPage'
@@ -84,6 +89,7 @@ const AppContent = () => {
         <Routes>
           {/* Public Heritage Discovery */}
           <Route path="/" element={<HomePage />} />
+          <Route path="/catalog" element={<CatalogPage />} />
           <Route path="/shop" element={<ShopPage />} />
           <Route path="/about-aso-lesekese" element={<AboutAsoLesekesePage />} />
           <Route path="/wholesale" element={<WholesalePage />} />
@@ -117,6 +123,9 @@ const AppContent = () => {
               <ProfilePage />
             </ProtectedRoute>
           } />
+
+          {/* Catch-all 404 Route */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
 
@@ -132,14 +141,16 @@ const AppContent = () => {
 function App() {
   return (
     <AppUiProvider>
-      <Router>
-        <AutoLogin>
-          <ScrollToTop />
-          <AmbientBackground />
-          <NoiseOverlay />
-          <AppContent />
-        </AutoLogin>
-      </Router>
+      <ErrorBoundary>
+        <Router>
+          <AutoLogin>
+            <ScrollToTop />
+            <AmbientBackground />
+            <NoiseOverlay />
+            <AppContent />
+          </AutoLogin>
+        </Router>
+      </ErrorBoundary>
     </AppUiProvider>
   )
 }

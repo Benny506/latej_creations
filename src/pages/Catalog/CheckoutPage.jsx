@@ -6,8 +6,9 @@ import { usePaystackPayment } from 'react-paystack'
 import { useAppUi } from '../../context/AppUiContext'
 import supabase from '../../utils/supabase'
 import { updateQuantityThunk, removeItemThunk, setCartData } from '../../store/slices/cartSlice'
-import { fetchPreorderWindows } from '../../store/slices/preorderSlice'
+import { fetchPreorderWindows, fetchPreorderRules } from '../../store/slices/preorderSlice'
 import { motion } from 'framer-motion'
+import * as LucideIcons from 'lucide-react'
 import { CalendarClock, ShieldCheck } from 'lucide-react'
 
 // Modular Components Registry
@@ -16,6 +17,7 @@ import CheckoutTips from '../../components/checkout/CheckoutTips'
 import OrderTypeSelector from '../../components/checkout/OrderTypeSelector'
 import DeliveryForm from '../../components/checkout/DeliveryForm'
 import OrderSummary from '../../components/checkout/OrderSummary'
+import PreorderRulesModal from '../../components/ui/PreorderRulesModal'
 import { PAYSTACK_CONFIG } from '../../utils/paystack'
 
 /**
@@ -30,7 +32,7 @@ const CheckoutPage = () => {
 
   const { isAuthenticated, user, profile } = useSelector(state => state.auth)
   const { items: reduxItems } = useSelector(state => state.cart)
-  const { windows } = useSelector(state => state.preorder || { windows: [] })
+  const { windows, rules: preorderRules } = useSelector(state => state.preorder || { windows: [], rules: [] })
 
   // Local state for fresh data
   const [cartItems, setCartItems] = useState([])
@@ -45,6 +47,7 @@ const CheckoutPage = () => {
 
   const [paymentMethod, setPaymentMethod] = useState('paystack')
   const [showManualModal, setShowManualModal] = useState(false)
+  const [showRulesModal, setShowRulesModal] = useState(false)
   const [manualOrderId, setManualOrderId] = useState(null)
   const [cancellingOrder, setCancellingOrder] = useState(false)
 
@@ -133,6 +136,7 @@ const CheckoutPage = () => {
   useEffect(() => {
     loadCheckoutData()
     dispatch(fetchPreorderWindows())
+    dispatch(fetchPreorderRules())
   }, [loadCheckoutData, dispatch])
 
   // Calculation Registry
@@ -440,8 +444,6 @@ const CheckoutPage = () => {
       }
 
       // 4. Trigger Payment Window
-
-      // 4. Trigger Payment Window
       setPendingCheckoutData({
         txRef: finalTxRef,
         orderId: data.id
@@ -476,13 +478,20 @@ const CheckoutPage = () => {
                   >
                     <div className="d-flex align-items-center gap-3 mb-2">
                       <CalendarClock className="text-primary" size={24} />
-                      <h5 className="fw-bold text-main mb-0 tracking-widest text-uppercase">
-                        Pre-order Items Included
-                      </h5>
+                      <div className="ms-3 flex-grow-1">
+                        <h6 className="fw-bold mb-1" style={{ color: 'var(--lt-earth-dark)' }}>Pre-order Advisory</h6>
+                        <p className="mb-0 small" style={{ color: 'var(--lt-earth-dark)' }}>
+                          Your order contains pre-order items. These items will be processed after the {checkoutType} window closes on <span className="text-primary fw-bold">{new Date(activePreorderWindow.end_time).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>. Delivery timelines will begin from this date.
+                        </p>
+                        <button 
+                          type="button"
+                          className="btn btn-link p-0 text-primary fw-bold small mt-2 text-decoration-none shadow-none" 
+                          onClick={() => setShowRulesModal(true)}
+                        >
+                          View {checkoutType === 'wholesale' ? 'Wholesale' : 'Retail'} Pre-order Guidelines &rarr;
+                        </button>
+                      </div>
                     </div>
-                    <p className="mb-0 small text-main opacity-75 fw-bold ms-5">
-                      Your order contains pre-order items. These items will be processed after the {checkoutType} window closes on <span className="text-primary">{new Date(activePreorderWindow.end_time).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>. Delivery timelines will begin from this date.
-                    </p>
                   </motion.div>
                 )}
 
@@ -552,6 +561,14 @@ const CheckoutPage = () => {
           </BsButton>
         </Modal.Footer>
       </Modal>
+
+      {/* Pre-order Rules Modal */}
+      <PreorderRulesModal 
+        show={showRulesModal} 
+        onHide={() => setShowRulesModal(false)} 
+        rules={preorderRules}
+        modeFilter={checkoutType} 
+      />
 
       <style>
         {`

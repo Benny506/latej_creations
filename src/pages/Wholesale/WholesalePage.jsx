@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Container, Row, Col, Badge, Form, InputGroup } from 'react-bootstrap'
 import { useSelector, useDispatch } from 'react-redux'
+import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import ProductCard from '../../components/catalog/ProductCard'
 import { fetchPreorderWindows } from '../../store/slices/preorderSlice'
@@ -73,8 +74,9 @@ const WholesalePage = () => {
   const wholesaleWindow = useMemo(() => {
     return windows.find(w => w.mode === 'wholesale') || null
   }, [windows])
+  const [searchParams] = useSearchParams()
   const [search, setSearch] = useState('')
-  const [selectedCatalog, setSelectedCatalog] = useState('')
+  const [selectedCatalog, setSelectedCatalog] = useState(searchParams.get('category') || '')
   const [maxPrice, setMaxPrice] = useState('')
 
   const filteredProducts = useMemo(() => {

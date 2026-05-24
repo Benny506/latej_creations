@@ -1,7 +1,8 @@
 import React from 'react'
 import { Container, Row, Col } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
-import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from 'lucide-react'
+import { Facebook, Instagram, Mail, Phone, MapPin } from 'lucide-react'
+import { FaTiktok } from 'react-icons/fa'
 import { ADMIN_CONFIG } from '../../utils/constants'
 
 /**
@@ -54,7 +55,7 @@ const GlobalFooter = () => {
             <div className="d-flex gap-3 text-primary">
               <Instagram size={20} />
               <Facebook size={20} />
-              <Twitter size={20} />
+              <FaTiktok size={20} />
             </div>
           </Col>
 

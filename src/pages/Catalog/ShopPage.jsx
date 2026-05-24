@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Container, Row, Col, Badge, Form, InputGroup, Button } from 'react-bootstrap'
 import { useSelector, useDispatch } from 'react-redux'
+import { useSearchParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Link } from 'react-router-dom'
 import ProductCard from '../../components/catalog/ProductCard'
 import { fetchPreorderWindows } from '../../store/slices/preorderSlice'
 import { Search, Filter, SlidersHorizontal, Package, ArrowRight, ShoppingBag } from 'lucide-react'
@@ -75,8 +75,9 @@ const ShopPage = () => {
     return windows.find(w => w.mode === 'retail') || null
   }, [windows])
 
+  const [searchParams] = useSearchParams()
   const [search, setSearch] = useState('')
-  const [selectedCatalog, setSelectedCatalog] = useState('')
+  const [selectedCatalog, setSelectedCatalog] = useState(searchParams.get('category') || '')
   const [maxPrice, setMaxPrice] = useState('')
 
   const filteredProducts = useMemo(() => {

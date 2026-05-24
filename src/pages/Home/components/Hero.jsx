@@ -2,6 +2,7 @@ import React from 'react'
 import { Container, Row, Col, Button } from 'react-bootstrap'
 import { motion } from 'framer-motion'
 import { ArrowRight, Factory } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 /**
  * Hero Component
@@ -9,6 +10,9 @@ import { ArrowRight, Factory } from 'lucide-react'
  * Features dual CTAs for Wholesale and Retail, utilizing brand-aligned imagery.
  */
 const Hero = ({ content }) => {
+
+  const navigate = useNavigate()
+
   return (
     <section
       className="position-relative overflow-hidden"
@@ -68,6 +72,7 @@ const Hero = ({ content }) => {
 
               <div className="d-flex flex-column flex-sm-row gap-3 justify-content-center justify-content-lg-start">
                 <Button
+                  onClick={() => navigate('/wholesale')}
                   style={{ background: 'var(--lt-earth-dark)', borderColor: 'var(--lt-earth-dark)', borderRadius: '100px' }}
                   className="btn-lg px-4 py-3 shadow-lg d-flex align-items-center justify-content-center"
                 >
@@ -76,6 +81,7 @@ const Hero = ({ content }) => {
                 </Button>
 
                 <Button
+                  onClick={() => navigate('/shop')}
                   style={{ color: 'var(--lt-earth-dark)', borderColor: 'var(--lt-earth-dark)', borderRadius: '100px' }}
                   variant="outline-dark"
                   className="btn-lg px-4 py-3 d-flex align-items-center justify-content-center"

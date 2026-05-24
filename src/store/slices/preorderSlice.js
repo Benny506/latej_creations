@@ -28,10 +28,38 @@ export const fetchPreorderWindows = createAsyncThunk(
   }
 )
 
+export const fetchPreorderRules = createAsyncThunk(
+  'preorder/fetchRules',
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data, error } = await supabase
+        .from('latej_preorder_rules')
+        .select('*')
+        .order('created_at', { ascending: true })
+
+      if (error) throw error
+      return data
+    } catch (error) {
+      return rejectWithValue(error.message)
+    }
+  },
+  {
+    condition: (_, { getState }) => {
+      const { preorder } = getState()
+      if (preorder.rulesHasFetched || preorder.rulesLoading) {
+        return false
+      }
+    }
+  }
+)
+
 const initialState = {
   windows: [],
+  rules: [],
   loading: false,
+  rulesLoading: false,
   hasFetched: false,
+  rulesHasFetched: false,
   error: null
 }
 
@@ -56,6 +84,22 @@ const preorderSlice = createSlice({
       })
       .addCase(fetchPreorderWindows.rejected, (state, action) => {
         state.loading = false
+        state.error = action.payload
+      })
+      .addCase(fetchPreorderRules.pending, (state) => {
+        if (!state.rulesHasFetched) {
+          state.rulesLoading = true
+        }
+      })
+      .addCase(fetchPreorderRules.fulfilled, (state, action) => {
+        state.rulesLoading = false
+        state.rulesHasFetched = true
+        if (action.payload) {
+          state.rules = action.payload
+        }
+      })
+      .addCase(fetchPreorderRules.rejected, (state, action) => {
+        state.rulesLoading = false
         state.error = action.payload
       })
   }

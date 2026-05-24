@@ -5,7 +5,7 @@ import { useAppUi } from '../../context/AppUiContext'
 import ArtisanalIcon from '../ui/ArtisanalIcon'
 import supabase from '../../utils/supabase'
 import { useDispatch, useSelector } from 'react-redux'
-import { fetchPreorderWindows } from '../../store/slices/preorderSlice'
+import { fetchPreorderWindows, fetchPreorderRules } from '../../store/slices/preorderSlice'
 import { ChevronDown, X, Clock, Calendar } from 'lucide-react'
 
 /**
@@ -22,13 +22,14 @@ const SiteBanner = () => {
   const [showOffcanvas, setShowOffcanvas] = useState(false)
 
   const dispatch = useDispatch()
-  const { windows, hasFetched: preorderHasFetched } = useSelector(state => state.preorder || { windows: [] })
+  const { windows, rules, hasFetched: preorderHasFetched } = useSelector(state => state.preorder || { windows: [], rules: [] })
 
   const { scrollY } = useScroll()
 
   // 0. Trigger Preorder Fetch
   useEffect(() => {
     dispatch(fetchPreorderWindows())
+    dispatch(fetchPreorderRules())
   }, [dispatch])
 
   // 1. Resolve Tips from Context, DB, and Preorder Windows
@@ -54,6 +55,19 @@ const SiteBanner = () => {
             description: `From ${startStr} to ${endStr}`,
             category: `PRE-ORDER ${w.mode.toUpperCase()}`,
             icon: 'diamond'
+          })
+        })
+      }
+
+      // Map Preorder Rules
+      if (rules && rules.length > 0) {
+        rules.forEach(r => {
+          preorderTips.push({
+            id: `rule-${r.id}`,
+            title: r.title,
+            description: r.description,
+            category: `PRE-ORDER RULE ${r.mode.toUpperCase() === 'BOTH' ? '(ALL)' : `(${r.mode.toUpperCase()})`}`,
+            icon: r.icon || 'ShieldCheck'
           })
         })
       }
@@ -107,7 +121,7 @@ const SiteBanner = () => {
     }
 
     resolveTips()
-  }, [siteContent, hasAttemptedFetch, isFetching, setSiteContent, windows, preorderHasFetched])
+  }, [siteContent, hasAttemptedFetch, isFetching, setSiteContent, windows, rules, preorderHasFetched])
 
   // 2. Cycling Logic
   useEffect(() => {
