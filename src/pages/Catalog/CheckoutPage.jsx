@@ -19,6 +19,7 @@ import DeliveryForm from '../../components/checkout/DeliveryForm'
 import OrderSummary from '../../components/checkout/OrderSummary'
 import PreorderRulesModal from '../../components/ui/PreorderRulesModal'
 import { PAYSTACK_CONFIG } from '../../utils/paystack'
+import { MANUAL_TRANSFER_DETAILS } from '../../utils/manualTransfer'
 
 /**
  * CheckoutPage Component
@@ -542,13 +543,13 @@ const CheckoutPage = () => {
           </p>
           <div className="bg-light p-4 rounded-4 border border-light mb-4 text-start">
             <h6 className="tiny text-uppercase fw-bold opacity-50 mb-1">Bank Name</h6>
-            <p className="fw-bold text-main mb-3">Guaranty Trust Bank (GTB)</p>
+            <p className="fw-bold text-main mb-3">{MANUAL_TRANSFER_DETAILS.bankName}</p>
 
             <h6 className="tiny text-uppercase fw-bold opacity-50 mb-1">Account Number</h6>
-            <p className="fw-bold text-primary fs-3 mb-3 tracking-widest">0123456789</p>
+            <p className="fw-bold text-primary fs-3 mb-3 tracking-widest">{MANUAL_TRANSFER_DETAILS.accountNumber}</p>
 
             <h6 className="tiny text-uppercase fw-bold opacity-50 mb-1">Account Name</h6>
-            <p className="fw-bold text-main mb-0">La Tej Creations</p>
+            <p className="fw-bold text-main mb-0">{MANUAL_TRANSFER_DETAILS.accountName}</p>
           </div>
           <p className="tiny opacity-50 fst-italic">Do not close this window until you have successfully made the transfer.</p>
         </Modal.Body>

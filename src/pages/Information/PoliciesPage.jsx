@@ -71,6 +71,18 @@ const PoliciesPage = () => {
     { ...defaultSections[3], ...content.legal }
   ]
 
+  // Hydrate custom dynamic sections
+  const customSchemas = siteContent?.policies?.custom_schema_sections || []
+  customSchemas.forEach(schemaDef => {
+    const customData = content[schemaDef.id] || {}
+    sections.push({
+      id: schemaDef.id,
+      icon: <Shield size={20} />, // Fallback icon for dynamic policies
+      title: schemaDef.label, // Fallback if admin hasn't filled out nav title
+      ...customData
+    })
+  })
+
   return (
     <div className="policies-page bg-light min-vh-100 py-10">
       <Container className='mt-5'>
