@@ -70,7 +70,7 @@ const OrderSummary = ({
                         <span className="tiny fw-bold">{item.quantity}</span>
                         <button type="button" onClick={() => handleUpdateQuantity(item.variant.id, item.quantity + 1)} className="btn btn-link p-0 text-main border-0 shadow-none"><Plus size={14} /></button>
                       </div>
-                      <span className="fw-bold text-primary">₦{(price * item.quantity).toLocaleString()}</span>
+                      <span className="fw-bold text-primary">₦{(price * (Number(item.quantity) || 1)).toLocaleString()}</span>
                     </div>
                   </div>
                   <button type="button" onClick={() => handleRemove(item.variant.id)} className="btn btn-link text-danger opacity-25 hover-opacity-100 p-0 border-0 shadow-none position-absolute top-0 end-0 m-2">
@@ -87,7 +87,7 @@ const OrderSummary = ({
         <div className="d-flex flex-column gap-3 mb-4">
           <div className="d-flex justify-content-between opacity-50 tiny text-uppercase fw-bold tracking-widest">
             <span>Items Total ({checkoutType})</span>
-            <span>₦{subtotal.toLocaleString()}</span>
+            <span>₦{(Number(subtotal) || 0).toLocaleString()}</span>
           </div>
 
           {/* Coupon Section */}
@@ -135,14 +135,14 @@ const OrderSummary = ({
           {couponDiscount > 0 && (
             <div className="d-flex justify-content-between text-success tiny text-uppercase fw-bold tracking-widest animate-pulse">
               <span>Coupon Discount</span>
-              <span>- ₦{couponDiscount.toLocaleString()}</span>
+              <span>- ₦{(Number(couponDiscount) || 0).toLocaleString()}</span>
             </div>
           )}
 
           <div className="d-flex flex-column gap-2 mb-2">
             <div className="d-flex justify-content-between opacity-50 tiny text-uppercase fw-bold tracking-widest">
               <span>Delivery Fee</span>
-              <span className="text-primary">₦{deliveryFee.toLocaleString()}</span>
+              <span className="text-primary">₦{(Number(deliveryFee) || 0).toLocaleString()}</span>
             </div>
             {deliveryBreakdown?.isExtra && (
               <div className="p-3 bg-light rounded-4 border border-light mt-1">
@@ -150,14 +150,14 @@ const OrderSummary = ({
                 <div className="d-flex flex-column gap-2">
                   <div className="d-flex justify-content-between tiny fw-bold opacity-50">
                     <span>Base Flat Fee</span>
-                    <span>₦{deliveryBreakdown.baseFee.toLocaleString()}</span>
+                    <span>₦{(Number(deliveryBreakdown.baseFee) || 0).toLocaleString()}</span>
                   </div>
                   <div className="d-flex justify-content-between tiny fw-bold opacity-50">
-                    <span>Extra Weight ({deliveryBreakdown.extraWeight}kg)</span>
-                    <span>+ ₦{deliveryBreakdown.totalExtra.toLocaleString()}</span>
+                    <span>Extra Weight ({(Number(deliveryBreakdown.extraWeight) || 0)}kg)</span>
+                    <span>+ ₦{(Number(deliveryBreakdown.totalExtra) || 0).toLocaleString()}</span>
                   </div>
                   <div className="mt-2 pt-2 border-top border-light border-opacity-50 tiny opacity-50 leading-relaxed font-italic" style={{ fontSize: '0.8rem' }}>
-                    Note: Your order exceeds the {deliveryBreakdown.threshold}kg base weight. ₦{deliveryBreakdown.incrementFee.toLocaleString()} added for every {deliveryBreakdown.threshold}kg extra.
+                    Note: Your order exceeds the {(Number(deliveryBreakdown.threshold) || 0)}kg base weight. ₦{(Number(deliveryBreakdown.incrementFee) || 0).toLocaleString()} added for every {(Number(deliveryBreakdown.threshold) || 0)}kg extra.
                   </div>
                 </div>
               </div>
@@ -166,7 +166,7 @@ const OrderSummary = ({
           <hr className="my-1 opacity-10" />
           <div className="d-flex justify-content-between align-items-center">
             <h5 className="fw-bold text-main mb-0">Grand Total</h5>
-            <h4 className="fw-bold text-primary mb-0">₦{((subtotal - couponDiscount) + deliveryFee).toLocaleString()}</h4>
+            <h4 className="fw-bold text-primary mb-0">₦{((Number(subtotal) || 0) - (Number(couponDiscount) || 0) + (Number(deliveryFee) || 0)).toLocaleString()}</h4>
           </div>
           <div className="d-flex flex-column gap-2 mt-2 mb-3">
             <h6 className="tiny fw-bold text-main opacity-50 text-uppercase tracking-widest mb-1">Payment Method</h6>

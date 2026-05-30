@@ -79,7 +79,7 @@ const DeliveryForm = ({ formData, setFormData, deliveryOptions, selectedDelivery
             </div>
             {selectedDeliveryId && (
               <div className="mt-2 px-3 py-2 bg-white rounded-pill border border-light d-inline-flex align-items-center gap-2">
-                 <span className="tiny fw-bold text-primary">Delivery Fee: ₦{deliveryFee.toLocaleString()}</span>
+                 <span className="tiny fw-bold text-primary">Delivery Fee: ₦{(Number(deliveryFee) || 0).toLocaleString()}</span>
               </div>
             )}
           </Form.Group>

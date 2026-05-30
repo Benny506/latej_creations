@@ -20,6 +20,7 @@ import OrderSummary from '../../components/checkout/OrderSummary'
 import PreorderRulesModal from '../../components/ui/PreorderRulesModal'
 import { PAYSTACK_CONFIG } from '../../utils/paystack'
 import { MANUAL_TRANSFER_DETAILS } from '../../utils/manualTransfer'
+import { adminEmailConstants } from '../../utils/constants.js'
 
 /**
  * CheckoutPage Component
@@ -151,24 +152,24 @@ const CheckoutPage = () => {
   }, [filteredItems, windows, checkoutType])
 
   const calculatePrice = useCallback((item) => {
-    return item.variant.price || 0
+    return Number(item.variant.price) || 0
   }, [])
 
-  const subtotal = filteredItems.reduce((acc, item) => acc + (calculatePrice(item) * item.quantity), 0)
+  const subtotal = filteredItems.reduce((acc, item) => acc + (calculatePrice(item) * (Number(item.quantity) || 1)), 0)
 
   let couponDiscount = 0
   if (appliedCoupon) {
     if (appliedCoupon.type === 'percentage') {
-      couponDiscount = subtotal * (appliedCoupon.amount / 100)
+      couponDiscount = subtotal * ((Number(appliedCoupon.amount) || 0) / 100)
     } else {
-      couponDiscount = appliedCoupon.amount
+      couponDiscount = Number(appliedCoupon.amount) || 0
     }
     couponDiscount = Math.min(couponDiscount, subtotal) // Cannot discount more than subtotal
   }
 
   const totalWeight = filteredItems.reduce((acc, item) => {
-    const weight = item.variant.weight || 0
-    return acc + (weight * item.quantity)
+    const weight = Number(item.variant.weight) || 0
+    return acc + (weight * (Number(item.quantity) || 1))
   }, 0)
 
   const [deliveryBreakdown, setDeliveryBreakdown] = useState(null)
@@ -226,14 +227,14 @@ const CheckoutPage = () => {
     const option = deliveryOptions.find(opt => opt.id === selectedDeliveryId)
     if (!option) return
 
-    const baseFee = parseFloat(option.flat_fee)
+    const baseFee = parseFloat(option.flat_fee) || 0
     let totalFee = baseFee
     let breakdown = { baseFee, isExtra: false }
 
     if (totalWeight > option.increment_weight) {
       const extraWeight = totalWeight - option.increment_weight
       const increments = Math.ceil(extraWeight / option.increment_weight)
-      const incrementFee = parseFloat(option.increment_fee)
+      const incrementFee = parseFloat(option.increment_fee) || 0
       const totalExtra = increments * incrementFee
 
       totalFee += totalExtra
@@ -256,7 +257,7 @@ const CheckoutPage = () => {
   const paystackConfig = {
     reference: pendingCheckoutData?.txRef || '',
     email: formData.email,
-    amount: Math.round(((subtotal - couponDiscount) + deliveryFee) * 100), // Paystack expects amount in kobo
+    amount: Math.round(((Number(subtotal) || 0) - (Number(couponDiscount) || 0) + (Number(deliveryFee) || 0)) * 100), // Paystack expects amount in kobo
     publicKey: PAYSTACK_CONFIG.PUBLIC_KEY,
     currency: 'NGN',
     metadata: {
@@ -367,6 +368,8 @@ const CheckoutPage = () => {
         await supabase.functions.invoke('send-email', {
           body: {
             to: formData.email,
+            from_email: adminEmailConstants.FROM_EMAIL,
+            from_name: adminEmailConstants.FROM_NAME,
             subject: 'We are verifying your manual payment',
             template: 'order_status_update',
             params: {
@@ -413,6 +416,11 @@ const CheckoutPage = () => {
       const idempotencyKey = `${user.id}_${Date.now()}_${checkoutType}`
       const finalTxRef = `LTJ_ORD_${checkoutType}_${user.id.split('-')[0]}_${Date.now()}`
 
+      const orderItemsPayload = cartItems.map(item => ({
+        variant_id: item.variant.id,
+        quantity: item.quantity
+      }))
+
       const { data, error } = await supabase.rpc('create_latej_order', {
         input_shop_mode: checkoutType,
         input_delivery_fee: deliveryFee,
@@ -420,7 +428,8 @@ const CheckoutPage = () => {
         input_idempotency_key: idempotencyKey,
         input_tx_ref: finalTxRef,
         input_coupon_code: appliedCoupon ? appliedCoupon.code : null,
-        input_payment_method: paymentMethod
+        input_payment_method: paymentMethod,
+        input_items: orderItemsPayload
       })
 
       if (error) {
@@ -484,9 +493,9 @@ const CheckoutPage = () => {
                         <p className="mb-0 small" style={{ color: 'var(--lt-earth-dark)' }}>
                           Your order contains pre-order items. These items will be processed after the {checkoutType} window closes on <span className="text-primary fw-bold">{new Date(activePreorderWindow.end_time).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>. Delivery timelines will begin from this date.
                         </p>
-                        <button 
+                        <button
                           type="button"
-                          className="btn btn-link p-0 text-primary fw-bold small mt-2 text-decoration-none shadow-none" 
+                          className="btn btn-link p-0 text-primary fw-bold small mt-2 text-decoration-none shadow-none"
                           onClick={() => setShowRulesModal(true)}
                         >
                           View {checkoutType === 'wholesale' ? 'Wholesale' : 'Retail'} Pre-order Guidelines &rarr;
@@ -539,7 +548,7 @@ const CheckoutPage = () => {
         </Modal.Header>
         <Modal.Body className="p-4 text-center">
           <p className="text-main opacity-75 small leading-relaxed mb-4">
-            Your order has been reserved! Please transfer the exact amount of <strong className="text-primary fs-5">₦{((subtotal - couponDiscount) + deliveryFee).toLocaleString()}</strong> to the account below.
+            Your order has been reserved! Please transfer the exact amount of <strong className="text-primary fs-5">₦{((Number(subtotal) || 0) - (Number(couponDiscount) || 0) + (Number(deliveryFee) || 0)).toLocaleString()}</strong> to the account below.
           </p>
           <div className="bg-light p-4 rounded-4 border border-light mb-4 text-start">
             <h6 className="tiny text-uppercase fw-bold opacity-50 mb-1">Bank Name</h6>
@@ -564,11 +573,11 @@ const CheckoutPage = () => {
       </Modal>
 
       {/* Pre-order Rules Modal */}
-      <PreorderRulesModal 
-        show={showRulesModal} 
-        onHide={() => setShowRulesModal(false)} 
+      <PreorderRulesModal
+        show={showRulesModal}
+        onHide={() => setShowRulesModal(false)}
         rules={preorderRules}
-        modeFilter={checkoutType} 
+        modeFilter={checkoutType}
       />
 
       <style>

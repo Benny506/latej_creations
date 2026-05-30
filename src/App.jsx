@@ -26,6 +26,7 @@ import ShopPage from './pages/Catalog/ShopPage'
 import AboutAsoLesekesePage from './pages/Catalog/AboutAsoLesekesePage'
 import ProductDetailsPage from './pages/Catalog/ProductDetailsPage'
 import CheckoutPage from './pages/Catalog/CheckoutPage'
+import SharedOrderCheckout from './pages/SharedOrders/SharedOrderCheckout'
 import AboutPage from './pages/Information/AboutPage'
 import SupportPage from './pages/Information/SupportPage'
 import PoliciesPage from './pages/Information/PoliciesPage'
@@ -94,7 +95,12 @@ const AppContent = () => {
           <Route path="/about-aso-lesekese" element={<AboutAsoLesekesePage />} />
           <Route path="/wholesale" element={<WholesalePage />} />
           <Route path="/product/:id" element={<ProductDetailsPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/checkout" element={
+            <ProtectedRoute>
+              <CheckoutPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/shared-orders/:token" element={<SharedOrderCheckout />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/support" element={<SupportPage />} />
           <Route path="/contact" element={<SupportPage />} />
