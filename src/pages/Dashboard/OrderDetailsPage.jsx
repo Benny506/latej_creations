@@ -14,7 +14,9 @@ import {
   Clock,
   MessageSquare,
   HelpCircle,
-  ExternalLink
+  ExternalLink,
+  FileText,
+  Download
 } from 'lucide-react'
 import supabase from '../../utils/supabase'
 import { useAppUi } from '../../context/AppUiContext'
@@ -280,6 +282,15 @@ const OrderDetailsPage = () => {
                     </div>
                   </div>
                 )}
+                {order.additional_notes && (
+                  <div className="d-flex align-items-start gap-3 mt-2">
+                    <div className="bg-light p-2 rounded-3 text-primary"><MessageSquare size={18} /></div>
+                    <div>
+                      <p className="tiny text-uppercase fw-bold opacity-50 mb-1">Additional Notes</p>
+                      <p className="small text-main opacity-75 mb-0 fst-italic">"{order.additional_notes}"</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </Card.Body>
           </Card>
@@ -344,6 +355,51 @@ const OrderDetailsPage = () => {
               </div>
             </Card.Body>
           </Card>
+
+          {/* Transaction Receipt Display */}
+          {order.transfer_receipt && (
+            <Card className="border-0 shadow-sm rounded-4 mt-4 overflow-hidden">
+              <Card.Header className="bg-white border-0 py-4 px-4">
+                <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                  <div className="d-flex align-items-center gap-3">
+                    <FileText className="text-primary" />
+                    <h5 className="fw-bold text-main mb-0">Payment Receipt</h5>
+                  </div>
+                  <a 
+                    href={order.transfer_receipt} 
+                    download={`receipt_${order.order_number || order.id}`}
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="btn btn-sm btn-primary rounded-pill fw-bold px-4 py-2 d-flex align-items-center gap-2 shadow-sm"
+                  >
+                    <Download size={14} /> Download
+                  </a>
+                </div>
+              </Card.Header>
+              <Card.Body className="p-4 pt-0 text-center bg-white">
+                <div className="p-3 bg-light rounded-4 border border-light">
+                  {order.transfer_receipt.toLowerCase().includes('.pdf') ? (
+                    <object 
+                      data={order.transfer_receipt} 
+                      type="application/pdf" 
+                      width="100%" 
+                      height="350px" 
+                      className="rounded-3 shadow-sm border border-light"
+                    >
+                      <p className="tiny opacity-50 py-4">PDF Preview not available on this device.</p>
+                    </object>
+                  ) : (
+                    <img 
+                      src={order.transfer_receipt} 
+                      alt="Transaction Receipt" 
+                      className="img-fluid rounded-3 shadow-sm border border-light" 
+                      style={{ maxHeight: '350px', objectFit: 'contain' }} 
+                    />
+                  )}
+                </div>
+              </Card.Body>
+            </Card>
+          )}
         </Col>
       </Row>
 

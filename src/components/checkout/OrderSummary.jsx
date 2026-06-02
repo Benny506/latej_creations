@@ -20,7 +20,9 @@ const OrderSummary = ({
   couponDiscount,
   handleRemoveCoupon,
   paymentMethod,
-  setPaymentMethod
+  setPaymentMethod,
+  additionalNotes,
+  setAdditionalNotes
 }) => (
   <div className="sticky-top" style={{ top: '120px' }}>
     <div className="bg-white rounded-5 shadow-premium border border-light overflow-hidden">
@@ -168,6 +170,19 @@ const OrderSummary = ({
             <h5 className="fw-bold text-main mb-0">Grand Total</h5>
             <h4 className="fw-bold text-primary mb-0">₦{((Number(subtotal) || 0) - (Number(couponDiscount) || 0) + (Number(deliveryFee) || 0)).toLocaleString()}</h4>
           </div>
+
+          <div className="d-flex flex-column gap-2 mt-4 mb-2">
+            <h6 className="tiny fw-bold text-main opacity-50 text-uppercase tracking-widest mb-1">Additional Notes</h6>
+            <textarea
+              className="form-control bg-light border-0 shadow-none tiny p-3 rounded-4"
+              rows={3}
+              placeholder="Any special instructions for us? (Optional)"
+              value={additionalNotes}
+              onChange={(e) => setAdditionalNotes(e.target.value)}
+              style={{ resize: 'none' }}
+            />
+          </div>
+
           <div className="d-flex flex-column gap-2 mt-2 mb-3">
             <h6 className="tiny fw-bold text-main opacity-50 text-uppercase tracking-widest mb-1">Payment Method</h6>
             <div className="d-flex gap-2">

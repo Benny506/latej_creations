@@ -9,7 +9,7 @@ import { updateQuantityThunk, removeItemThunk, setCartData } from '../../store/s
 import { fetchPreorderWindows, fetchPreorderRules } from '../../store/slices/preorderSlice'
 import { motion } from 'framer-motion'
 import * as LucideIcons from 'lucide-react'
-import { CalendarClock, ShieldCheck } from 'lucide-react'
+import { CalendarClock, ShieldCheck, Upload } from 'lucide-react'
 
 // Modular Components Registry
 import CheckoutHeader from '../../components/checkout/CheckoutHeader'
@@ -52,6 +52,9 @@ const CheckoutPage = () => {
   const [showRulesModal, setShowRulesModal] = useState(false)
   const [manualOrderId, setManualOrderId] = useState(null)
   const [cancellingOrder, setCancellingOrder] = useState(false)
+  const [receiptFile, setReceiptFile] = useState(null)
+  const [receiptPreview, setReceiptPreview] = useState(null)
+  const [additionalNotes, setAdditionalNotes] = useState('')
 
   const [formData, setFormData] = useState({
     fullName: profile?.full_name || '',
@@ -353,12 +356,55 @@ const CheckoutPage = () => {
     }
   }
 
+  const handleReceiptChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      addAlert('File size exceeds 5MB limit.', 'error')
+      return
+    }
+
+    setReceiptFile(file)
+    setReceiptPreview(URL.createObjectURL(file))
+  }
+
   const handleConfirmManualPayment = async () => {
     setGlobalLoading(true, 'Confirming your transfer...')
     try {
+      let receiptUrl = null
+
+      if (receiptFile) {
+        setGlobalLoading(true, 'Uploading receipt...')
+        const fileExt = receiptFile.name.split('.').pop()
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
+        const filePath = `${user.id}/${fileName}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('receipts')
+          .upload(filePath, receiptFile)
+
+        if (uploadError) {
+          console.error('Receipt upload error:', uploadError)
+          throw new Error('Failed to upload receipt. Please try again.')
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('receipts')
+          .getPublicUrl(filePath)
+          
+        receiptUrl = publicUrlData.publicUrl
+      }
+
+      setGlobalLoading(true, 'Updating order...')
+      const updatePayload = { status: 'verifying_manual_payment' }
+      if (receiptUrl) {
+        updatePayload.transfer_receipt = receiptUrl
+      }
+
       const { error } = await supabase
         .from('latej_orders')
-        .update({ status: 'verifying_manual_payment' })
+        .update(updatePayload)
         .eq('id', manualOrderId)
 
       if (error) throw error
@@ -429,7 +475,8 @@ const CheckoutPage = () => {
         input_tx_ref: finalTxRef,
         input_coupon_code: appliedCoupon ? appliedCoupon.code : null,
         input_payment_method: paymentMethod,
-        input_items: orderItemsPayload
+        input_items: orderItemsPayload,
+        input_additional_notes: additionalNotes
       })
 
       if (error) {
@@ -535,6 +582,8 @@ const CheckoutPage = () => {
                 handleRemoveCoupon={handleRemoveCoupon}
                 paymentMethod={paymentMethod}
                 setPaymentMethod={setPaymentMethod}
+                additionalNotes={additionalNotes}
+                setAdditionalNotes={setAdditionalNotes}
               />
             </Col>
           </Row>
@@ -559,6 +608,46 @@ const CheckoutPage = () => {
 
             <h6 className="tiny text-uppercase fw-bold opacity-50 mb-1">Account Name</h6>
             <p className="fw-bold text-main mb-0">{MANUAL_TRANSFER_DETAILS.accountName}</p>
+          </div>
+
+          {/* Receipt Upload Area */}
+          <div className="text-start mb-4">
+            <Form.Group>
+              <Form.Label className="tiny text-uppercase fw-bold opacity-50 mb-2">Upload Receipt (Optional)</Form.Label>
+              <div className="position-relative">
+                <Form.Control
+                  type="file"
+                  accept="image/png, image/jpeg, image/jpg, application/pdf"
+                  onChange={handleReceiptChange}
+                  className="d-none"
+                  id="receipt-upload"
+                />
+                <label 
+                  htmlFor="receipt-upload" 
+                  className="w-100 p-4 border border-2 border-dashed rounded-4 text-center cursor-pointer transition-all hover-bg-light"
+                  style={{ borderColor: 'rgba(109, 62, 33, 0.2)' }}
+                >
+                  {receiptPreview ? (
+                    <div className="d-flex flex-column align-items-center">
+                      {receiptFile?.type === 'application/pdf' ? (
+                        <object data={receiptPreview} type="application/pdf" width="100%" height="150px" className="rounded-3 mb-2 shadow-sm border border-light">
+                          <p>PDF Preview not available</p>
+                        </object>
+                      ) : (
+                        <img src={receiptPreview} alt="Receipt Preview" className="img-fluid rounded-3 mb-2 shadow-sm border border-light" style={{ maxHeight: '150px', objectFit: 'contain' }} />
+                      )}
+                      <span className="tiny fw-bold text-primary mt-2">Click to change receipt</span>
+                    </div>
+                  ) : (
+                    <div className="opacity-50 py-3">
+                      <Upload size={24} className="mb-2" />
+                      <h6 className="fw-bold mb-1">Upload Payment Receipt</h6>
+                      <p className="tiny mb-0">Tap to browse (JPG, PNG, PDF up to 5MB)</p>
+                    </div>
+                  )}
+                </label>
+              </div>
+            </Form.Group>
           </div>
           <p className="tiny opacity-50 fst-italic">Do not close this window until you have successfully made the transfer.</p>
         </Modal.Body>

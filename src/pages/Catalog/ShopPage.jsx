@@ -75,10 +75,32 @@ const ShopPage = () => {
     return windows.find(w => w.mode === 'retail') || null
   }, [windows])
 
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [selectedCatalog, setSelectedCatalog] = useState(searchParams.get('category') || '')
   const [maxPrice, setMaxPrice] = useState('')
+
+  // Sync state with URL params when navigating via navbar
+  useEffect(() => {
+    const category = searchParams.get('category')
+    if (category !== null) {
+      setSelectedCatalog(category)
+    } else {
+      setSelectedCatalog('')
+    }
+  }, [searchParams])
+
+  // Update URL when dropdown changes
+  const handleCatalogChange = (e) => {
+    const val = e.target.value
+    setSelectedCatalog(val)
+    if (val) {
+      searchParams.set('category', val)
+    } else {
+      searchParams.delete('category')
+    }
+    setSearchParams(searchParams)
+  }
 
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
@@ -155,7 +177,7 @@ const ShopPage = () => {
           <div className="bg-white p-4 rounded-5 shadow-premium border border-light">
             <Row className="g-4">
               <Col lg={4}><Form.Group><Form.Label className="tiny text-uppercase fw-bold opacity-50 d-flex align-items-center gap-2 mb-2"><Search size={14} /> Search</Form.Label><InputGroup className="bg-light rounded-4 overflow-hidden border-0"><Form.Control placeholder="Find something..." className="bg-transparent border-0 py-3 px-4 shadow-none" value={search} onChange={(e) => setSearch(e.target.value)} /></InputGroup></Form.Group></Col>
-              <Col lg={4}><Form.Group><Form.Label className="tiny text-uppercase fw-bold opacity-50 d-flex align-items-center gap-2 mb-2"><Filter size={14} /> Category</Form.Label><Form.Select className="bg-light border-0 py-3 px-4 rounded-4 shadow-none" value={selectedCatalog} onChange={(e) => setSelectedCatalog(e.target.value)}><option value="">All Categories</option>{catalogs.filter(c => c.type === 'retail').map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</Form.Select></Form.Group></Col>
+              <Col lg={4}><Form.Group><Form.Label className="tiny text-uppercase fw-bold opacity-50 d-flex align-items-center gap-2 mb-2"><Filter size={14} /> Category</Form.Label><Form.Select className="bg-light border-0 py-3 px-4 rounded-4 shadow-none" value={selectedCatalog} onChange={handleCatalogChange}><option value="">All Categories</option>{catalogs.filter(c => c.type === 'retail').map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</Form.Select></Form.Group></Col>
               <Col lg={4}><Form.Group><Form.Label className="tiny text-uppercase fw-bold opacity-50 d-flex align-items-center gap-2 mb-2"><SlidersHorizontal size={14} /> Max Price</Form.Label><InputGroup className="bg-light rounded-4 overflow-hidden border-0"><InputGroup.Text className="bg-transparent border-0 ps-4 pe-0 opacity-50 fw-bold">₦</InputGroup.Text><Form.Control type="number" placeholder="Highest price..." className="bg-transparent border-0 py-3 px-4 shadow-none" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} /></InputGroup></Form.Group></Col>
             </Row>
           </div>

@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Container, Row, Col, Card, Badge, Modal, Button as BsButton } from 'react-bootstrap'
+import { Container, Row, Col, Card, Badge, Modal, Button as BsButton, Form } from 'react-bootstrap'
 import { usePaystackPayment } from 'react-paystack'
 import { useAppUi } from '../../context/AppUiContext'
-import supabase from '../../utils/supabase'
+import supabase, { SUPABASE_URL } from '../../utils/supabase'
 import { PAYSTACK_CONFIG } from '../../utils/paystack'
 import { MANUAL_TRANSFER_DETAILS } from '../../utils/manualTransfer'
 import { adminEmailConstants } from '../../utils/constants'
-import { Clock, MapPin, Phone, User, Package, ShieldCheck, CreditCard, Landmark, AlertTriangle } from 'lucide-react'
+import { Clock, MapPin, Phone, User, Package, ShieldCheck, CreditCard, Landmark, AlertTriangle, Upload } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export default function SharedOrderCheckout() {
@@ -25,6 +25,9 @@ export default function SharedOrderCheckout() {
   const [paymentMethod, setPaymentMethod] = useState('paystack')
   const [showManualModal, setShowManualModal] = useState(false)
   const [confirmingManual, setConfirmingManual] = useState(false)
+  const [additionalNotes, setAdditionalNotes] = useState('')
+  const [receiptFile, setReceiptFile] = useState(null)
+  const [receiptPreview, setReceiptPreview] = useState(null)
 
   // Fetch the nested order data securely using the anonymous RPC
   const fetchOrderDetails = useCallback(async () => {
@@ -123,10 +126,27 @@ export default function SharedOrderCheckout() {
     })
   }
 
-  const handleCompletePayment = () => {
+  const handleCompletePayment = async () => {
     if (isExpired) {
       addAlert('This link has expired.', 'error')
       return
+    }
+
+    if (additionalNotes) {
+      setGlobalLoading(true, 'Saving your notes...')
+      try {
+        const { error } = await supabase.rpc('update_latej_shared_order_metadata', {
+          p_token: token,
+          p_additional_notes: additionalNotes
+        })
+        if (error) throw error
+      } catch (err) {
+        console.error(err)
+        setGlobalLoading(false)
+        addAlert('Failed to save notes.', 'error')
+        return
+      }
+      setGlobalLoading(false)
     }
 
     if (paymentMethod === 'manual') {
@@ -136,10 +156,49 @@ export default function SharedOrderCheckout() {
     }
   }
 
+  const handleReceiptChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      addAlert('File size exceeds 5MB limit.', 'error')
+      return
+    }
+
+    setReceiptFile(file)
+    setReceiptPreview(URL.createObjectURL(file))
+  }
+
   const handleConfirmManualPayment = async () => {
     setConfirmingManual(true)
     setGlobalLoading(true, 'Confirming your transfer...')
     try {
+      let receiptUrl = null
+
+      if (receiptFile) {
+        setGlobalLoading(true, 'Uploading receipt...')
+        const fileExt = receiptFile.name.split('.').pop()
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('receipts')
+          .upload(fileName, receiptFile, { cacheControl: '3600', upsert: false })
+
+        if (uploadError) throw uploadError
+
+        // receiptUrl = `${SUPABASE_URL}/storage/v1/object/public/receipts/${uploadData.path}`
+
+        receiptUrl = supabase.storage
+          .from('receipts')
+          .getPublicUrl(uploadData.path)
+
+        const { error: metaError } = await supabase.rpc('update_latej_shared_order_metadata', {
+          p_token: token,
+          p_transfer_receipt: receiptUrl
+        })
+        if (metaError) throw metaError
+      }
+
       // Use RPC to securely bypass RLS and mark the order as verifying
       const { error: rpcError } = await supabase.rpc('confirm_latej_shared_order_manual_payment', { p_token: token })
 
@@ -213,8 +272,8 @@ export default function SharedOrderCheckout() {
             <p className="text-muted mb-4">
               The secure payment window for this shared order has closed. To protect your security and inventory availability, this session can no longer be processed. Please contact the administrator for a new link.
             </p>
-            <BsButton 
-              variant="primary" 
+            <BsButton
+              variant="primary"
               className="rounded-pill px-5 py-3 fw-bold text-uppercase tracking-widest shadow-sm"
               onClick={() => navigate('/catalog')}
             >
@@ -401,7 +460,20 @@ export default function SharedOrderCheckout() {
                     </label>
                   </div>
 
+                  <Form.Group className="mb-4">
+                    <Form.Label className="small fw-bold text-uppercase tracking-widest text-muted">Additional Notes (Optional)</Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={2}
+                      value={additionalNotes}
+                      onChange={(e) => setAdditionalNotes(e.target.value)}
+                      placeholder="Any specific requests or instructions?"
+                      className="rounded-3 shadow-none border-light bg-light focus-ring"
+                    />
+                  </Form.Group>
+
                   <BsButton
+
                     variant={isExpired ? 'secondary' : 'primary'}
                     className="w-100 py-3 rounded-pill fw-bold text-uppercase tracking-widest shadow-sm d-flex align-items-center justify-content-center gap-2"
                     onClick={handleCompletePayment}
@@ -435,6 +507,47 @@ export default function SharedOrderCheckout() {
             <h6 className="tiny text-uppercase fw-bold opacity-50 mb-1">Account Name</h6>
             <p className="fw-bold text-main mb-0">{MANUAL_TRANSFER_DETAILS.accountName}</p>
           </div>
+
+          {/* Receipt Upload Area */}
+          <div className="text-start mb-4">
+            <Form.Group>
+              <Form.Label className="tiny text-uppercase fw-bold opacity-50 mb-2">Upload Receipt (Optional)</Form.Label>
+              <div className="position-relative">
+                <Form.Control
+                  type="file"
+                  accept="image/png, image/jpeg, image/jpg, application/pdf"
+                  onChange={handleReceiptChange}
+                  className="d-none"
+                  id="receipt-upload"
+                />
+                <label
+                  htmlFor="receipt-upload"
+                  className="w-100 p-4 border border-2 border-dashed rounded-4 text-center cursor-pointer transition-all hover-bg-light"
+                  style={{ borderColor: 'rgba(109, 62, 33, 0.2)' }}
+                >
+                  {receiptPreview ? (
+                    <div className="d-flex flex-column align-items-center">
+                      {receiptFile?.type === 'application/pdf' ? (
+                        <object data={receiptPreview} type="application/pdf" width="100%" height="150px" className="rounded-3 mb-2 shadow-sm border border-light">
+                          <p>PDF Preview not available</p>
+                        </object>
+                      ) : (
+                        <img src={receiptPreview} alt="Receipt Preview" className="img-fluid rounded-3 mb-2 shadow-sm border border-light" style={{ maxHeight: '150px', objectFit: 'contain' }} />
+                      )}
+                      <span className="tiny fw-bold text-primary mt-2">Click to change receipt</span>
+                    </div>
+                  ) : (
+                    <div className="opacity-50 py-3">
+                      <Upload size={24} className="mb-2 mx-auto d-block" />
+                      <h6 className="fw-bold mb-1">Upload Payment Receipt</h6>
+                      <p className="tiny mb-0">Tap to browse (JPG, PNG, PDF up to 5MB)</p>
+                    </div>
+                  )}
+                </label>
+              </div>
+            </Form.Group>
+          </div>
+
           <p className="tiny opacity-50 fst-italic">Do not close this window until you have successfully made the transfer.</p>
         </Modal.Body>
         <Modal.Footer className="border-0 pt-0 pb-4 px-4 flex-nowrap">
