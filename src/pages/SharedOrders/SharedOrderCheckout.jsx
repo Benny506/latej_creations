@@ -190,7 +190,7 @@ export default function SharedOrderCheckout() {
 
         receiptUrl = supabase.storage
           .from('receipts')
-          .getPublicUrl(uploadData.path)
+          .getPublicUrl(uploadData.path).data.publicUrl
 
         const { error: metaError } = await supabase.rpc('update_latej_shared_order_metadata', {
           p_token: token,
