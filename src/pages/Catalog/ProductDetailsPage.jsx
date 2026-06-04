@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Container, Row, Col, Badge, Button, Form } from 'react-bootstrap'
+import { Container, Row, Col, Badge, Button, Form, Modal } from 'react-bootstrap'
 import { useSelector, useDispatch } from 'react-redux'
 import {
   ShoppingBag,
@@ -13,11 +13,13 @@ import {
   Minus,
   Plus,
   ExternalLink,
-  ArrowRight
+  ArrowRight,
+  Ruler
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { addItemThunk, openCart } from '../../store/slices/cartSlice'
 import { useAppUi } from '../../context/AppUiContext'
+import supabase from '../../utils/supabase'
 
 /**
  * ProductDetailsPage Component
@@ -37,9 +39,22 @@ const ProductDetailsPage = () => {
   const [selectedVariant, setSelectedVariant] = useState(null)
   const [quantity, setQuantity] = useState(1)
 
+  const [sizeChart, setSizeChart] = useState(null)
+  const [showSizeChart, setShowSizeChart] = useState(false)
+
   useEffect(() => {
     if (product && product.variants?.length > 0) {
       setSelectedVariant(product.variants[0])
+    }
+
+    console.log(product?.size_chart_id)
+
+    if (product?.size_chart_id) {
+      const fetchSizeChart = async () => {
+        const { data, error } = await supabase.from('latej_size_charts').select('*').eq('id', product.size_chart_id).single()
+        if (data) setSizeChart(data)
+      }
+      fetchSizeChart()
     }
   }, [product])
 
@@ -137,7 +152,18 @@ const ProductDetailsPage = () => {
 
               {/* Variant Discovery Registry */}
               <div>
-                <h6 className="tiny text-uppercase fw-bold opacity-50 tracking-widest mb-3">Select Variant</h6>
+                <div className="d-flex align-items-center justify-content-between mb-3">
+                  <h6 className="tiny text-uppercase fw-bold opacity-50 tracking-widest mb-0">Select Variant</h6>
+                  {sizeChart && (
+                    <Button
+                      variant="link"
+                      className="p-0 text-primary d-flex align-items-center gap-1 tiny fw-bold text-decoration-none hover-opacity-75 transition-all"
+                      onClick={() => setShowSizeChart(true)}
+                    >
+                      <Ruler size={14} /> Size Guide
+                    </Button>
+                  )}
+                </div>
                 <div className="d-flex flex-wrap align-items-start gap-3">
                   {product.variants?.map(v => {
                     const isActive = selectedVariant?.id === v.id
@@ -215,7 +241,7 @@ const ProductDetailsPage = () => {
                       Discover more images, potential videos, and post-content styling for this exact variant!
                     </p>
                   </div>
-                  <a 
+                  <a
                     href={selectedVariant.external_product_link}
                     target="_blank"
                     rel="noreferrer"
@@ -281,6 +307,42 @@ const ProductDetailsPage = () => {
           </Col>
         </Row>
       </Container>
+
+      {/* Size Chart Modal Manifestation */}
+      {sizeChart && (
+        <Modal
+          show={showSizeChart}
+          onHide={() => setShowSizeChart(false)}
+          centered
+          size="lg"
+          contentClassName="border-0 shadow-premium"
+          style={{ borderRadius: '40px' }}
+        >
+          <Modal.Header closeButton className="border-0 p-5 pb-0">
+            <Modal.Title className="fw-bold text-main d-flex align-items-center gap-3">
+              <div className="bg-primary-light p-3 rounded-4 text-primary shadow-sm">
+                <Ruler size={24} />
+              </div>
+              {sizeChart.title}
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body className="p-5 pt-4">
+            {sizeChart.description && (
+              <p className="text-main opacity-75 leading-relaxed mb-4">
+                {sizeChart.description}
+              </p>
+            )}
+            <div className="bg-light p-2 rounded-5 overflow-hidden">
+              <img
+                src={sizeChart.image_url}
+                alt={sizeChart.title}
+                className="w-100 rounded-4"
+                style={{ objectFit: 'contain', maxHeight: '600px' }}
+              />
+            </div>
+          </Modal.Body>
+        </Modal>
+      )}
 
       <style>
         {`
